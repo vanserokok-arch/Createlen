@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Генератор лендинга — Противобман (Replit)</title>
+  <meta name="description" content="Collaborative AI landing generator — инвестиционные мошенничества" />
+  <style>
+    :root{
+      --accent:#ffb400;
+      --glass-radius:12px;
+      --bg:#0f1724;
+      --card-bg: rgba(255,255,255,0.03);
+    }
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Arial;background:var(--bg);color:#e8f0ff}
+    .wrap{max-width:980px;margin:36px auto;padding:20px}
+    .card{border-radius:var(--glass-radius);padding:18px;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.06);backdrop-filter:blur(8px)}
+    .header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,#222,#111);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--accent)}
+    h1{margin:0;font-size:18px}
+    .muted{color:rgba(232,240,255,0.72);font-size:13px}
+    .row{display:flex;gap:16px;margin-top:14px;align-items:flex-start}
+    textarea{width:100%;min-height:160px;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background:rgba(0,0,0,0.22);color:#fff;resize:vertical}
+    .controls{width:240px;display:flex;flex-direction:column;gap:8px}
+    button{padding:10px 12px;border-radius:10px;border:0;cursor:pointer}
+    .primary{background:var(--accent);color:#111;font-weight:800}
+    .outline{background:transparent;border:1px solid rgba(255,255,255,0.06);color:#fff}
+    .preview{margin-top:14px;padding:14px;border-radius:10px;background:linear-gradient(180deg, rgba(10,14,22,0.35), rgba(10,14,22,0.25));border:1px solid rgba(255,255,255,0.03)}
+    .hero h2{margin:0;color:#fff}
+    .hero p{margin:8px 0;color:rgba(232,240,255,0.85)}
+    @media (max-width:880px){ .row{flex-direction:column} .controls{width:100%} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="header">
+        <div class="brand">
+          <div class="logo">K</div>
+          <div>
+            <h1>Кейс — Противобман (Replit)</h1>
+            <div class="muted">Генератор лендинга — инвестиционные мошенничества</div>
+          </div>
+        </div>
+        <div class="muted">Минимум действий: вставьте OPENAI_KEY и ALLOWED_TOKEN в Secrets → Run</div>
+      </div>
+
+      <div style="margin-top:12px" class="muted">Сессия (введите простое имя, чтобы сохранить результат): <input id="session-id" type="text" value="session-1" style="padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:rgba(0,0,0,0.18);color:#fff" /></div>
+
+      <div class="row">
+        <div style="flex:1">
+          <label class="muted">Краткий бриф / тема</label>
+          <textarea id="brief">Лендинг для юристов: мошенничество при инвестициях, фокус на крипто и инвестиционные пирамиды. Тон — строгий, уверенный, ориентир на пострадавших из СПб.</textarea>
+          <div id="status" class="muted" style="margin-top:8px">Статус: готов</div>
+
+          <div id="preview" class="preview" hidden></div>
+        </div>
+
+        <div class="controls">
+          <label class="muted">Шаблон</label>
+          <select id="page-type" style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(0,0,0,0.18);color:#fff">
+            <option value="invest">Мошенничество при инвестициях</option>
+            <option value="persuasion">Перевод под влиянием</option>
+            <option value="hacked">Взлом личных кабинетов</option>
+          </select>
+
+          <button id="generate" class="primary" style="margin-top:8px">Сгенерировать</button>
+          <button id="export" class="outline">Скачать ZIP</button>
+          <button id="copy" class="outline">Копировать HTML</button>
+
+          <div style="margin-top:10px" class="muted">Публикация: экспорт -> загрузите landing.html в HTML‑блок Тильды</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const SERVER = location.origin; // Replit запускает сервер в том же origin
+  const briefEl = document.getElementById('brief');
+  const genBtn = document.getElementById('generate');
+  const statusEl = document.getElementById('status');
+  const previewEl = document.getElementById('preview');
+  const exportBtn = document.getElementById('export');
+  const copyBtn = document.getElementById('copy');
+  const pageType = document.getElementById('page-type');
+  const sessionIdEl = document.getElementById('session-id');
+
+  function escapeHTML(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  async function generate(){
+    const brief = briefEl.value.trim();
+    if (!brief) { alert('Добавьте бриф'); briefEl.focus(); return; }
+    const sessionId = sessionIdEl.value.trim() || 'session-1';
+    statusEl.textContent = 'Статус: генерируем…';
+    genBtn.disabled = true;
+    try {
+      const res = await fetch(SERVER + '/generate', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ brief, page_type: pageType.value, sessionId })
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || JSON.stringify(json));
+      renderPreview(json);
+      statusEl.textContent = 'Статус: готово';
+    } catch(err) {
+      statusEl.textContent = 'Ошибка: ' + err.message;
+      alert('Ошибка: ' + err.message);
+    } finally { genBtn.disabled = false; }
+  }
+
+  function renderPreview(data){
+    previewEl.hidden = false;
+    const h = data.hero || {};
+    let html = `<div class="hero"><h2>${escapeHTML(h.title||'')}</h2><p>${escapeHTML(h.subtitle||'')}</p>`;
+    if (h.cta) html += `<p><a href="#" style="background:${getComputedStyle(document.documentElement).getPropertyValue('--accent')||'#ffb400'};padding:8px 10px;border-radius:8px;color:#111;font-weight:800;text-decoration:none">${escapeHTML(h.cta)}</a></p>`;
+    html += `</div>`;
+
+    if (data.benefits && data.benefits.length){
+      html += `<h3 style="margin-top:12px">Преимущества</h3><div>`;
+      data.benefits.forEach(b => html += `<div><strong>${escapeHTML(b.title)}</strong><div>${escapeHTML(b.text)}</div></div>`);
+      html += `</div>`;
+    }
+
+    if (data.process && data.process.length){
+      html += `<h3 style="margin-top:12px">Как мы работаем</h3><div>`;
+      data.process.forEach(p => html += `<div><strong>${escapeHTML(p.step_title)}</strong><div>${escapeHTML(p.step_text)}</div></div>`);
+      html += `</div>`;
+    }
+
+    if (data.faq && data.faq.length){
+      html += `<h3 style="margin-top:12px">FAQ</h3>`;
+      data.faq.forEach(q => html += `<details><summary>${escapeHTML(q.q)}</summary><div style="margin-top:8px">${escapeHTML(q.a)}</div></details>`);
+    }
+
+    previewEl.innerHTML = html;
+  }
+
+  exportBtn.addEventListener('click', ()=> {
+    const sessionId = sessionIdEl.value.trim() || 'session-1';
+    window.open('/export?sessionId=' + encodeURIComponent(sessionId), '_blank');
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    if (previewEl.hidden) { alert('Сначала сгенерируйте'); return; }
+    try {
+      await navigator.clipboard.writeText(previewEl.innerHTML);
+      alert('HTML скопирован в буфер обмена');
+    } catch(e) {
+      alert('Не удалось скопировать: ' + e.message);
+    }
+  });
+
+  genBtn.addEventListener('click', generate);
+
+})();
+</script>
+</body>
+</html>
