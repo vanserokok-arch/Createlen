@@ -73,9 +73,19 @@ jobs:
     name: Trigger Render deploy
     runs-on: ubuntu-latest
     needs: build_and_push
-    if: github.ref == 'refs/heads/main' && (secrets.RENDER_API_KEY != '' && secrets.RENDER_SERVICE_ID != '')
+    # job-level condition: только по main (не используем secrets на уровне job)
+    if: github.ref == 'refs/heads/main'
     steps:
+      - name: Check Render secrets
+        # этот шаг всегда запустится, но завершится с exit 0 если секреты не заданы
+        run: |
+          if [ -z "${{ secrets.RENDER_API_KEY }}" ] || [ -z "${{ secrets.RENDER_SERVICE_ID }}" ]; then
+            echo "RENDER_API_KEY or RENDER_SERVICE_ID is not set — skipping deploy"
+            exit 0
+          fi
       - name: Trigger Render deploy via API
+        # теперь можно безопасно использовать secrets в step-level if
+        if: ${{ secrets.RENDER_API_KEY != '' && secrets.RENDER_SERVICE_ID != '' }}
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
