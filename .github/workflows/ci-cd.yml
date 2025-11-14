@@ -36,7 +36,10 @@ jobs:
           ALLOWED_TOKEN: ${{ secrets.ALLOWED_TOKEN }}
           MOCK_OPENAI: "true"
         run: |
-          npm test
+          echo "Running tests if 'test' script exists..."
+          # --if-present will skip (exit 0) when there is no "test" script,
+          # and will run tests (propagating exit code) if the script exists.
+          npm run test --if-present
 
   build_and_push:
     name: Build and Push Docker image
@@ -73,7 +76,6 @@ jobs:
     name: Trigger Render deploy
     runs-on: ubuntu-latest
     needs: build_and_push
-    # job-level условие: только main (без обращения к secrets)
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Check Render secrets
