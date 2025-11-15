@@ -13,8 +13,8 @@
     "audit": "npm audit --audit-level=moderate"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.0.0",
-    "@aws-sdk/s3-request-presigner": "^3.0.0",
+    "@aws-sdk/client-s3": "^3.930.0",
+    "@aws-sdk/s3-request-presigner": "^3.930.0",
     "archiver": "^5.3.2",
     "bullmq": "^5.0.0",
     "dotenv": "^16.6.1",

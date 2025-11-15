@@ -1,6 +1,7 @@
 # render.yaml — Render configuration for autonomous landing generation
 # Deploy instructions: https://render.com/docs/infrastructure-as-code
 # This configuration defines a web service and a background worker for async task processing
+# NOTE: Update the 'branch' field below to match your deployment branch
 
 services:
   # Web service - main API server
@@ -8,6 +9,7 @@ services:
     name: createlen-web
     runtime: node
     plan: free # Change to starter/standard for production
+    # TODO: Update branch name to match your deployment branch (e.g., main, copilot/autonomous-skeleton)
     branch: copilot/add-openai-scaffold
     buildCommand: npm ci
     startCommand: npm start
@@ -43,6 +45,7 @@ services:
     name: createlen-worker
     runtime: node
     plan: free # Change to starter/standard for production
+    # TODO: Update branch name to match your deployment branch
     branch: copilot/add-openai-scaffold
     buildCommand: npm ci
     startCommand: node worker/worker.js

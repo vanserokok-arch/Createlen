@@ -57,12 +57,12 @@ export async function uploadToS3(key, body, contentType = 'application/octet-str
   try {
     await client.send(command);
     
-    // Return public URL (if bucket is public) or generate presigned URL
-    // For security, using presigned URLs is recommended
-    const url = `https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com/${key}`;
-    console.log(`Uploaded to S3: ${url}`);
+    // Return presigned URL for security (recommended over public URLs)
+    // This ensures controlled access even if bucket is private
+    const presignedUrl = await getPresignedUrl(key, 3600); // 1 hour expiration
+    console.log(`Uploaded to S3: ${key}`);
     
-    return url;
+    return presignedUrl;
   } catch (error) {
     console.error('S3 upload failed:', error);
     throw new Error(`Failed to upload to S3: ${error.message}`);

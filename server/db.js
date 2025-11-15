@@ -28,7 +28,11 @@ function getPool() {
     pool = new Pool({
       connectionString: DATABASE_URL,
       ssl: DATABASE_URL.includes('supabase') || process.env.NODE_ENV === 'production' 
-        ? { rejectUnauthorized: false } 
+        ? { 
+            rejectUnauthorized: true, // Validate SSL certificates for security
+            // For Supabase, certificate validation should work out of the box
+            // If issues occur with specific providers, add their CA certificates here
+          } 
         : false,
       // TODO: Configure pool settings for production
       // max: 20,
