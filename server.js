@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import fetch from "node-fetch";
 import archiver from "archiver";
 import openaiRouter from './src/routes/openai.js';
+import healthRouter from './server/health.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,15 +19,15 @@ app.use(express.json({ limit: "1mb" }));
 // Static files
 app.use(express.static(path.join(__dirname)));
 
-const OPENAI_KEY = process.env.OPENAI_KEY;
+const OPENAI_KEY = process.env.OPENAI_KEY || process.env.OPENAI_API_KEY;
 const ALLOWED_TOKEN = process.env.ALLOWED_TOKEN || "";
-if (!OPENAI_KEY) console.warn("WARNING: OPENAI_KEY not set in env/replit secrets.");
+if (!OPENAI_KEY) console.warn("WARNING: OPENAI_KEY or OPENAI_API_KEY not set in env/replit secrets.");
 
 // Mount new OpenAI API routes
 app.use('/api', openaiRouter);
 
-// Health check endpoint
-app.get('/health', (req, res) => res.json({ ok: true }));
+// Mount health check routes
+app.use(healthRouter);
 
 const inMemoryStore = {}; // { sessionId: { data: JSON } }
 
@@ -38,12 +39,41 @@ function checkToken(req) {
 }
 
 // POST /generate -> calls OpenAI and stores result in memory
+// Supports async mode: if async=true, queues task and returns sessionId
 app.post("/generate", async (req, res) => {
   try {
     if (!checkToken(req)) return res.status(401).json({ error: "Unauthorized: invalid token" });
-    const { brief = "", page_type = "invest", sessionId = "session-1" } = req.body;
+    const { brief = "", page_type = "invest", sessionId = "session-1", async = false } = req.body;
     if (!brief) return res.status(400).json({ error: "Empty brief" });
 
+    // Async mode: queue task and return immediately
+    if (async) {
+      try {
+        // Lazy load queue and db modules only when needed
+        const { addGenerationTask } = await import('./server/queue.js');
+        const { createSession } = await import('./server/db.js');
+        
+        // Create session in database
+        await createSession(sessionId, { brief, page_type });
+        
+        // Add task to queue
+        await addGenerationTask(sessionId, { brief, page_type });
+        
+        return res.json({
+          sessionId,
+          status: 'pending',
+          message: 'Task queued for processing',
+        });
+      } catch (error) {
+        console.error('Async queue error:', error);
+        return res.status(500).json({ 
+          error: 'Failed to queue task. Async mode requires DATABASE_URL and REDIS_URL.',
+          details: error.message 
+        });
+      }
+    }
+
+    // Synchronous mode: generate immediately (existing behavior)
     // Build prompt: instruct to respond with strict JSON
     const userPrompt = `
 You are a JSON generator for a Russian law firm's landing page.
@@ -100,6 +130,49 @@ Do not output anything except the JSON object.
     return res.json(out);
   } catch (err) {
     console.error("Generate error:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /status/:sessionId -> check async task status
+app.get("/status/:sessionId", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    
+    // Try to get from database (async mode)
+    try {
+      const { getSession } = await import('./server/db.js');
+      const session = await getSession(sessionId);
+      
+      if (session) {
+        return res.json({
+          sessionId: session.session_id,
+          status: session.status,
+          result: session.result,
+          error: session.error_message,
+          s3_url: session.s3_url,
+          created_at: session.created_at,
+          updated_at: session.updated_at,
+        });
+      }
+    } catch (dbError) {
+      console.log('Database not available, checking in-memory store');
+    }
+    
+    // Fallback to in-memory store (sync mode)
+    const item = inMemoryStore[sessionId];
+    if (item) {
+      return res.json({
+        sessionId,
+        status: 'completed',
+        result: item.data,
+        created_at: new Date(item.createdAt).toISOString(),
+      });
+    }
+    
+    return res.status(404).json({ error: 'Session not found' });
+  } catch (err) {
+    console.error('Status check error:', err);
     return res.status(500).json({ error: err.message });
   }
 });
