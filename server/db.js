@@ -30,7 +30,11 @@ export function getPool() {
 
 /**
  * Execute migrations from scripts/migrate.sql
- * TODO: Add proper migration tracking to avoid re-running migrations
+ * 
+ * TODO: Implement proper migration tracking to avoid re-running migrations
+ * Current implementation runs all migrations on every call, which is not ideal for production.
+ * Consider adding a 'migrations' table to track executed migrations, or use a migration
+ * library like knex, typeorm, or db-migrate for better migration management.
  */
 export async function initMigrations() {
   const pool = getPool();

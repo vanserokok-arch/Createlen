@@ -5,20 +5,7 @@ import { Worker } from 'bullmq';
 import fetch from 'node-fetch';
 import { updateSession } from '../server/db.js';
 import { uploadJsonToS3, uploadHtmlToS3, getPresignedUrl } from '../server/s3.js';
-
-// Parse Redis URL
-function parseRedisUrl(url) {
-  const parsed = new URL(url);
-  const isTLS = parsed.protocol === 'rediss:';
-  
-  return {
-    host: parsed.hostname,
-    port: parseInt(parsed.port || (isTLS ? '6380' : '6379'), 10),
-    password: parsed.password || undefined,
-    username: parsed.username || undefined,
-    tls: isTLS ? {} : undefined,
-  };
-}
+import { parseRedisUrl } from '../server/redis-utils.js';
 
 // Get OpenAI API key (support both OPENAI_KEY and OPENAI_API_KEY)
 function getOpenAIKey() {
@@ -188,6 +175,9 @@ worker.on('completed', (job) => {
 
 worker.on('failed', (job, err) => {
   console.error(`Job ${job?.id} has failed with error:`, err.message);
+  if (err.stack) {
+    console.error('Stack trace:', err.stack);
+  }
 });
 
 worker.on('error', (err) => {

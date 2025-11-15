@@ -1,5 +1,6 @@
 // server/queue.js — BullMQ producer helper for adding jobs to Redis queue
 import { Queue } from 'bullmq';
+import { parseRedisUrl } from './redis-utils.js';
 
 let landingQueue = null;
 
@@ -76,23 +77,6 @@ export async function getJobStatus(sessionId) {
     progress,
     data: job.data,
     returnvalue: job.returnvalue,
-  };
-}
-
-/**
- * Parse Redis URL into connection options
- * Supports redis:// and rediss:// (TLS) URLs
- */
-function parseRedisUrl(url) {
-  const parsed = new URL(url);
-  const isTLS = parsed.protocol === 'rediss:';
-  
-  return {
-    host: parsed.hostname,
-    port: parseInt(parsed.port || (isTLS ? '6380' : '6379'), 10),
-    password: parsed.password || undefined,
-    username: parsed.username || undefined,
-    tls: isTLS ? {} : undefined,
   };
 }
 

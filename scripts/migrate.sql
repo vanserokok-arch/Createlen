@@ -20,5 +20,13 @@ CREATE INDEX IF NOT EXISTS idx_sessions_status ON sessions(status);
 -- Create index on created_at for time-based queries
 CREATE INDEX IF NOT EXISTS idx_sessions_created_at ON sessions(created_at);
 
--- TODO: Add migration tracking table to avoid re-running migrations
--- TODO: Add more sophisticated migration system (e.g., using a migration library)
+-- TODO: Implement proper migration tracking system
+-- Current approach uses "CREATE TABLE IF NOT EXISTS" which is safe for idempotent
+-- migrations but doesn't track which migrations have been executed.
+-- For production, consider implementing a migrations table with versioning:
+--   CREATE TABLE IF NOT EXISTS migrations (
+--     id SERIAL PRIMARY KEY,
+--     version TEXT UNIQUE NOT NULL,
+--     executed_at TIMESTAMPTZ DEFAULT NOW()
+--   );
+-- Or use a migration library like knex, typeorm, or db-migrate.
