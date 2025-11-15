@@ -8,6 +8,9 @@ import { fileURLToPath } from 'url';
 import fetch from "node-fetch";
 import archiver from "archiver";
 import openaiRouter from './src/routes/openai.js';
+import healthRouter from './server/health.js';
+import { createSession, getSession, initMigrations, isDatabaseConfigured } from './server/db.js';
+import { addGenerationJob, isQueueConfigured } from './server/queue.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,17 +21,24 @@ app.use(express.json({ limit: "1mb" }));
 // Static files
 app.use(express.static(path.join(__dirname)));
 
-const OPENAI_KEY = process.env.OPENAI_KEY;
+const OPENAI_KEY = process.env.OPENAI_KEY || process.env.OPENAI_API_KEY;
 const ALLOWED_TOKEN = process.env.ALLOWED_TOKEN || "";
 if (!OPENAI_KEY) console.warn("WARNING: OPENAI_KEY not set in env/replit secrets.");
+
+// Mount health check routes
+app.use(healthRouter);
 
 // Mount new OpenAI API routes
 app.use('/api', openaiRouter);
 
-// Health check endpoint
-app.get('/health', (req, res) => res.json({ ok: true }));
-
 const inMemoryStore = {}; // { sessionId: { data: JSON } }
+
+// Initialize database migrations on startup if database is configured
+if (isDatabaseConfigured()) {
+  initMigrations().catch(err => {
+    console.error('Failed to run migrations:', err);
+  });
+}
 
 // Helper: validate token (simple)
 function checkToken(req) {
@@ -37,13 +47,36 @@ function checkToken(req) {
   return !ALLOWED_TOKEN || t === ALLOWED_TOKEN;
 }
 
-// POST /generate -> calls OpenAI and stores result in memory
+// POST /generate -> calls OpenAI and stores result in memory or queues async job
 app.post("/generate", async (req, res) => {
   try {
     if (!checkToken(req)) return res.status(401).json({ error: "Unauthorized: invalid token" });
-    const { brief = "", page_type = "invest", sessionId = "session-1" } = req.body;
+    const { brief = "", page_type = "invest", sessionId = "session-1", async = false } = req.body;
     if (!brief) return res.status(400).json({ error: "Empty brief" });
 
+    // Check if async mode is requested and infrastructure is available
+    if (async && isQueueConfigured() && isDatabaseConfigured()) {
+      // Async mode: queue the job
+      try {
+        // Create session in database
+        await createSession(sessionId, { brief, page_type, async: true });
+        
+        // Add job to queue
+        await addGenerationJob(sessionId, brief, page_type, req.body.token || '');
+        
+        return res.json({
+          sessionId,
+          status: 'queued',
+          message: 'Job queued for processing',
+        });
+      } catch (err) {
+        console.error('Failed to queue async job:', err);
+        // Fallback to sync mode if async fails
+        console.log('Falling back to synchronous processing');
+      }
+    }
+
+    // Synchronous mode (default)
     // Build prompt: instruct to respond with strict JSON
     const userPrompt = `
 You are a JSON generator for a Russian law firm's landing page.
@@ -100,6 +133,31 @@ Do not output anything except the JSON object.
     return res.json(out);
   } catch (err) {
     console.error("Generate error:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/sessions/:sessionId -> get session status (for async jobs)
+app.get("/api/sessions/:sessionId", async (req, res) => {
+  if (!checkToken(req)) return res.status(401).json({ error: "Unauthorized" });
+  
+  const { sessionId } = req.params;
+  
+  // Check if database is configured
+  if (!isDatabaseConfigured()) {
+    return res.status(503).json({ error: "Database not configured for async mode" });
+  }
+  
+  try {
+    const session = await getSession(sessionId);
+    
+    if (!session) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+    
+    return res.json(session);
+  } catch (err) {
+    console.error("Failed to get session:", err);
     return res.status(500).json({ error: err.message });
   }
 });
