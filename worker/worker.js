@@ -171,6 +171,7 @@ const worker = new Worker(
 
       // Upload to S3 (if configured)
       let s3Urls = {};
+      let s3UploadFailed = false;
       if (process.env.S3_BUCKET) {
         try {
           const jsonKey = `landings/${sessionId}/landing.json`;
@@ -185,7 +186,9 @@ const worker = new Worker(
           console.log(`[Worker] Uploaded to S3: ${sessionId}`);
         } catch (err) {
           console.error(`[Worker] S3 upload failed: ${err.message}`);
-          // Continue even if S3 upload fails
+          s3UploadFailed = true;
+          // Store error but continue - data is still available in database
+          s3Urls = { error: err.message };
         }
       }
 
@@ -195,12 +198,13 @@ const worker = new Worker(
         page_type,
         data: landingData,
         s3: s3Urls,
+        s3UploadFailed,
         completedAt: new Date().toISOString(),
       };
 
       await updateSession(sessionId, 'completed', result);
 
-      console.log(`[Worker] Job completed for session: ${sessionId}`);
+      console.log(`[Worker] Job completed for session: ${sessionId}${s3UploadFailed ? ' (S3 upload failed)' : ''}`);
       return result;
     } catch (err) {
       console.error(`[Worker] Job failed for session ${sessionId}:`, err);

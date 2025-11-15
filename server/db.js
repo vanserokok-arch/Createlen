@@ -21,9 +21,16 @@ export function getPool() {
     if (!connectionString) {
       throw new Error('DATABASE_URL not configured');
     }
+    
+    // Configure SSL for production environments
+    // For services like Render or Supabase, SSL is required but self-signed certs are common
+    const sslConfig = process.env.NODE_ENV === 'production' 
+      ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' }
+      : false;
+    
     pool = new Pool({
       connectionString,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      ssl: sslConfig,
     });
   }
   return pool;

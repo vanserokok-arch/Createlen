@@ -47,6 +47,14 @@ This guide covers deploying the Createlen autonomous landing generator to Render
 |----------|-------------|---------|
 | `WORKER_CONCURRENCY` | Number of concurrent jobs | `2` |
 
+### Optional Configuration
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DB_SSL_REJECT_UNAUTHORIZED` | Validate SSL certificates for DB connection | `true` (set to `false` only if using self-signed certs) |
+
+**Security Note:** Only set `DB_SSL_REJECT_UNAUTHORIZED=false` if your database uses self-signed certificates. For production deployments with proper SSL certificates, leave this unset (defaults to true).
+
 ## Deployment Steps
 
 ### 1. Set Up External Services
