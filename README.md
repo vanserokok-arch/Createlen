@@ -233,7 +233,51 @@ After deployment:
 3. Add tests for webhook processing logic
 4. Set up monitoring and alerting
 5. Configure webhook events in GitHub App based on your needs
-6. Consider adding rate limiting for production
+6. **Add rate limiting** - Consider implementing rate limiting either:
+   - At the application level (using `express-rate-limit` package)
+   - At the nginx level (using `limit_req_zone` directive)
+   - Through a CDN or API gateway (recommended for production)
+
+### Security Considerations
+
+#### Rate Limiting
+
+The webhook endpoint currently does not implement rate limiting at the application level. For production deployments, you should add rate limiting to prevent abuse:
+
+**Option 1: nginx rate limiting** (Recommended for this setup)
+Add to `deploy/nginx.createlen.conf` before the `server` block:
+```nginx
+limit_req_zone $binary_remote_addr zone=webhook_limit:10m rate=10r/s;
+```
+
+Then add inside the `/webhook` location block:
+```nginx
+limit_req zone=webhook_limit burst=20 nodelay;
+```
+
+**Option 2: Application-level rate limiting**
+Install and use `express-rate-limit`:
+```bash
+npm install express-rate-limit
+```
+
+Then add to `webhook/webhook-handler.js`:
+```javascript
+import rateLimit from 'express-rate-limit';
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.'
+});
+
+app.post('/webhook', limiter, (req, res) => {
+  // existing webhook handler code
+});
+```
+
+**Option 3: Use GitHub's webhook delivery guarantees**
+GitHub implements its own rate limiting and delivery guarantees. For most use cases, this combined with nginx's rate limiting provides sufficient protection.
 
 ## Architecture
 
