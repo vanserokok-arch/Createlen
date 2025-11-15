@@ -1,5 +1,13 @@
 name: CI
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+      - copilot/add-openai-scaffold
+  pull_request:
+    branches:
+      - main
+      - copilot/add-openai-scaffold
 
 permissions:
   contents: read
@@ -16,11 +24,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Install
+      - name: Install dependencies
         run: npm ci
       - name: Run lint
         run: npm run lint --if-present
       - name: Run tests
         run: npm test --if-present
-      - name: Audit
+      - name: Build check (optional)
+        run: npm run build --if-present
+      - name: Audit dependencies
         run: npm audit --audit-level=moderate || true

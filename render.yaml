@@ -1,0 +1,97 @@
+# Render.com configuration for autonomous landing generation service
+# See docs/DEPLOY_RENDER.md for detailed setup instructions
+
+services:
+  # Web service - Express API server
+  - type: web
+    name: createlen-api
+    env: node
+    region: oregon
+    plan: starter
+    branch: copilot/add-openai-scaffold
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_API_KEY
+        sync: false  # Add via Render dashboard
+      - key: OPENAI_KEY
+        sync: false  # Alias for backward compatibility
+      - key: ALLOWED_TOKEN
+        sync: false  # Add via Render dashboard
+      - key: DATABASE_URL
+        fromDatabase:
+          name: createlen-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: createlen-redis
+          property: connectionString
+      - key: S3_BUCKET
+        sync: false  # Add via Render dashboard
+      - key: S3_ACCESS_KEY_ID
+        sync: false  # Add via Render dashboard
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false  # Add via Render dashboard
+      - key: S3_REGION
+        value: us-east-1
+      - key: PORT
+        value: 3000
+
+  # Background worker - BullMQ worker for async task processing
+  - type: worker
+    name: createlen-worker
+    env: node
+    region: oregon
+    plan: starter
+    branch: copilot/add-openai-scaffold
+    buildCommand: npm ci
+    startCommand: npm run worker
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_API_KEY
+        sync: false  # Add via Render dashboard
+      - key: OPENAI_KEY
+        sync: false  # Alias for backward compatibility
+      - key: DATABASE_URL
+        fromDatabase:
+          name: createlen-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: createlen-redis
+          property: connectionString
+      - key: S3_BUCKET
+        sync: false  # Add via Render dashboard
+      - key: S3_ACCESS_KEY_ID
+        sync: false  # Add via Render dashboard
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false  # Add via Render dashboard
+      - key: S3_REGION
+        value: us-east-1
+      - key: WORKER_CONCURRENCY
+        value: 5
+
+# Database - PostgreSQL (Supabase alternative: use external database)
+databases:
+  - name: createlen-db
+    databaseName: createlen
+    region: oregon
+    plan: starter
+    # After database is created, run migrations:
+    # Connect to shell and run: npm run migrate
+
+# Redis - Upstash alternative: use external Redis
+# Note: Render Redis instances are available on paid plans
+# For free tier, use Upstash Redis and set REDIS_URL manually
+# Uncomment below if using Render's managed Redis:
+# redis:
+#   - name: createlen-redis
+#     region: oregon
+#     plan: starter
+#     maxmemoryPolicy: allkeys-lru
