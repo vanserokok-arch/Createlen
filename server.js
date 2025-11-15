@@ -138,6 +138,123 @@ app.get("/export", async (req, res) => {
 
 function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+// ============================================================
+// AUTONOMOUS MODE ENDPOINTS
+// ============================================================
+
+// Import autonomous mode helpers (conditionally loaded if DATABASE_URL is set)
+let addGenerationJob, getSession, createSession, healthCheckHandler;
+const AUTONOMOUS_MODE_ENABLED = !!process.env.DATABASE_URL && !!process.env.REDIS_URL;
+
+if (AUTONOMOUS_MODE_ENABLED) {
+  try {
+    const queueModule = await import('./server/queue.js');
+    const dbModule = await import('./server/db.js');
+    const healthModule = await import('./server/health.js');
+    
+    addGenerationJob = queueModule.addGenerationJob;
+    getSession = dbModule.getSession;
+    createSession = dbModule.createSession;
+    healthCheckHandler = healthModule.healthCheckHandler;
+    
+    console.log('✓ Autonomous mode enabled');
+    
+    // Replace simple health check with comprehensive one
+    app.get('/health', healthCheckHandler);
+  } catch (err) {
+    console.error('✗ Failed to load autonomous mode modules:', err);
+  }
+}
+
+// POST /api/generate-async - Async generation endpoint
+app.post("/api/generate-async", async (req, res) => {
+  if (!AUTONOMOUS_MODE_ENABLED) {
+    return res.status(503).json({ 
+      error: "Autonomous mode not available. DATABASE_URL and REDIS_URL must be configured." 
+    });
+  }
+  
+  try {
+    if (!checkToken(req)) {
+      return res.status(401).json({ error: "Unauthorized: invalid token" });
+    }
+    
+    const { brief = "", page_type = "invest" } = req.body;
+    if (!brief) {
+      return res.status(400).json({ error: "Empty brief" });
+    }
+    
+    // Generate unique session ID
+    const sessionId = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Create session record in database
+    await createSession(sessionId, { brief, page_type });
+    
+    // Add job to queue
+    await addGenerationJob(sessionId, {
+      brief,
+      page_type,
+      token: req.body.token || req.headers.authorization?.replace('Bearer ', ''),
+    });
+    
+    return res.status(202).json({
+      sessionId,
+      status: 'pending',
+      message: 'Job queued for processing',
+      statusUrl: `/api/status/${sessionId}`,
+    });
+  } catch (err) {
+    console.error('Error creating async generation job:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/status/:sessionId - Check generation status
+app.get("/api/status/:sessionId", async (req, res) => {
+  if (!AUTONOMOUS_MODE_ENABLED) {
+    return res.status(503).json({ 
+      error: "Autonomous mode not available" 
+    });
+  }
+  
+  try {
+    // Check token for status endpoint too
+    if (!checkToken(req)) {
+      return res.status(401).json({ error: "Unauthorized: invalid token" });
+    }
+    
+    const { sessionId } = req.params;
+    const session = await getSession(sessionId);
+    
+    if (!session) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+    
+    const response = {
+      sessionId: session.session_id,
+      status: session.status,
+      created_at: session.created_at,
+      updated_at: session.updated_at,
+    };
+    
+    if (session.status === 'completed' && session.s3_url) {
+      response.downloadUrl = session.s3_url;
+      response.result = session.result;
+    }
+    
+    if (session.status === 'failed' && session.error) {
+      response.error = session.error;
+    }
+    
+    return res.json(response);
+  } catch (err) {
+    console.error('Error fetching session status:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================================
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
 
