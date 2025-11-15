@@ -13,16 +13,20 @@
     "audit": "npm audit --audit-level=moderate"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.932.0",
+    "@aws-sdk/s3-request-presigner": "^3.932.0",
     "archiver": "^5.3.2",
+    "bullmq": "^5.63.2",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "node-fetch": "^3.3.1",
-    "openai": "^4.0.0"
+    "openai": "^4.0.0",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
+    "eslint": "^8.0.0",
     "nodemon": "^2.0.22",
-    "vitest": "^1.0.0",
     "supertest": "^6.3.3",
-    "eslint": "^8.0.0"
+    "vitest": "^1.0.0"
   }
 }
