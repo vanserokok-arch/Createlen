@@ -1,0 +1,76 @@
+# render.yaml — Render configuration for autonomous landing generation
+# Deploy instructions: https://render.com/docs/infrastructure-as-code
+# This configuration defines a web service and a background worker for async task processing
+# NOTE: Update the 'branch' field below to match your deployment branch
+
+services:
+  # Web service - main API server
+  - type: web
+    name: createlen-web
+    runtime: node
+    plan: free # Change to starter/standard for production
+    # TODO: Update branch name to match your deployment branch (e.g., main, copilot/autonomous-skeleton)
+    branch: copilot/add-openai-scaffold
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_KEY
+        sync: false # Set manually in Render dashboard
+      - key: OPENAI_API_KEY
+        sync: false # Alternative key name for compatibility
+      - key: ALLOWED_TOKEN
+        sync: false # Set manually in Render dashboard
+      - key: S3_BUCKET
+        sync: false # AWS S3 bucket name
+      - key: S3_ACCESS_KEY_ID
+        sync: false # AWS access key
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false # AWS secret key
+      - key: S3_REGION
+        sync: false # AWS region (e.g., us-east-1)
+      - key: DATABASE_URL
+        sync: false # PostgreSQL connection string from Supabase
+      - key: REDIS_URL
+        sync: false # Redis connection string from Upstash
+      - key: RENDER_API_KEY
+        sync: false # Optional: for API integrations
+      - key: RENDER_SERVICE_ID
+        sync: false # Optional: current service ID
+
+  # Background worker - processes async tasks from Redis queue
+  - type: worker
+    name: createlen-worker
+    runtime: node
+    plan: free # Change to starter/standard for production
+    # TODO: Update branch name to match your deployment branch
+    branch: copilot/add-openai-scaffold
+    buildCommand: npm ci
+    startCommand: node worker/worker.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_REGION
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+
+# TODO: Add database service if not using external Supabase
+# TODO: Add Redis service if not using external Upstash
+# TODO: Configure auto-deploy settings
+# TODO: Set up custom domain if needed
+# TODO: Configure scaling settings for production
