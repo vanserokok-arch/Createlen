@@ -39,15 +39,6 @@ function checkToken(req) {
 // GET /health -> health check endpoint for Render
 app.get("/health", healthCheckHandler);
 
-const inMemoryStore = {}; // { sessionId: { data: JSON } }
-
-// Helper: validate token (simple)
-function checkToken(req) {
-  // token can be provided in body or query (for export)
-  const t = (req.body && req.body.token) || req.query.token || "";
-  return !ALLOWED_TOKEN || t === ALLOWED_TOKEN;
-}
-
 // POST /generate -> calls OpenAI and stores result in memory
 app.post("/generate", async (req, res) => {
   try {
