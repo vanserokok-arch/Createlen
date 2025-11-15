@@ -1,6 +1,7 @@
 name: CI/CD
 
 on:
+  workflow_dispatch: {}
   pull_request:
     types: [opened, synchronize, reopened]
   push:
@@ -37,8 +38,6 @@ jobs:
           MOCK_OPENAI: "true"
         run: |
           echo "Running tests if 'test' script exists..."
-          # --if-present will skip (exit 0) when there is no "test" script,
-          # and will run tests (propagating exit code) if the script exists.
           npm run test --if-present
 
   build_and_push:
