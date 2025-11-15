@@ -1,0 +1,84 @@
+name: Push Branch and Open PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch_name:
+        description: 'Branch name to create and push'
+        required: true
+        default: 'copilot/autonomous-skeleton'
+      base_branch:
+        description: 'Base branch for PR'
+        required: true
+        default: 'main'
+      pr_title:
+        description: 'Pull Request title'
+        required: true
+        default: 'Add autonomous skeleton for landing generation'
+      pr_body:
+        description: 'Pull Request body'
+        required: false
+        default: 'Adds minimal working skeleton for autonomous landing page generation'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  push-and-pr:
+    name: Push Branch and Create PR
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.REPO_PUSH_TOKEN }}
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+
+      - name: Create and push branch
+        run: |
+          git checkout -b ${{ github.event.inputs.branch_name }}
+          git push origin ${{ github.event.inputs.branch_name }}
+
+      - name: Create Pull Request
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.REPO_PUSH_TOKEN }}
+          script: |
+            const { data: pr } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '${{ github.event.inputs.pr_title }}',
+              head: '${{ github.event.inputs.branch_name }}',
+              base: '${{ github.event.inputs.base_branch }}',
+              body: `${{ github.event.inputs.pr_body }}
+              
+              ## Migration Instructions
+              
+              Run the database migration:
+              \`\`\`bash
+              psql "$DATABASE_URL" -f scripts/migrate.sql
+              \`\`\`
+              
+              ## Environment Variables Required
+              
+              - \`OPENAI_API_KEY\` or \`OPENAI_KEY\` - OpenAI API key
+              - \`ALLOWED_TOKEN\` - API authentication token
+              - \`DATABASE_URL\` - PostgreSQL connection string
+              - \`REDIS_URL\` - Redis connection string (Upstash or other)
+              - \`S3_BUCKET\` - S3 bucket name for artifacts
+              - \`S3_ACCESS_KEY_ID\` - AWS access key
+              - \`S3_SECRET_ACCESS_KEY\` - AWS secret key
+              - \`S3_REGION\` - AWS region (default: us-east-1)
+              - \`RENDER_API_KEY\` - Render.com API key (for CI/CD)
+              - \`RENDER_SERVICE_ID\` - Render.com service ID (for CI/CD)
+              `
+            });
+            
+            console.log('Pull Request created:', pr.html_url);
