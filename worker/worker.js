@@ -81,8 +81,8 @@ Do not output anything except the JSON object.
   try {
     out = JSON.parse(text);
   } catch (e) {
-    // Try to extract JSON block
-    const m = text.match(/\{[\s\S]*\}$/);
+    // Try to extract JSON block - use non-greedy match
+    const m = text.match(/\{[\s\S]*?\}(?=\s*$)/);
     if (m) {
       try {
         out = JSON.parse(m[0]);

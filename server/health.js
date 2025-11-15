@@ -18,7 +18,7 @@ router.get('/health', (req, res) => {
   
   // Check if required environment variables are set
   const requiredEnvVars = ['OPENAI_KEY', 'OPENAI_API_KEY'];
-  const hasOpenAI = requiredEnvVars.some(key => process.env[key]);
+  const hasOpenAI = requiredEnvVars.some(key => process.env[key] && process.env[key].trim().length > 0);
   
   if (!hasOpenAI) {
     health.warnings = health.warnings || [];

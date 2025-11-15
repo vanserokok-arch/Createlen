@@ -22,7 +22,7 @@ export function getPool() {
     }
     pool = new Pool({
       connectionString: DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false,
     });
   }
   return pool;

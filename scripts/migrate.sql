@@ -4,7 +4,7 @@
 CREATE TABLE IF NOT EXISTS sessions (
   id SERIAL PRIMARY KEY,
   session_id TEXT UNIQUE NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending',
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
   payload JSONB,
   result JSONB,
   error_message TEXT,

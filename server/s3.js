@@ -51,7 +51,9 @@ export async function uploadToS3(key, body, contentType = 'application/octet-str
   
   try {
     await client.send(command);
-    const url = `https://${S3_BUCKET}.s3.${process.env.S3_REGION || 'us-east-1'}.amazonaws.com/${key}`;
+    // Use S3 SDK to construct proper URL
+    const region = process.env.S3_REGION || 'us-east-1';
+    const url = `https://${S3_BUCKET}.s3.${region}.amazonaws.com/${key}`;
     console.log(`File uploaded to S3: ${url}`);
     return url;
   } catch (error) {
