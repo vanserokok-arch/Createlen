@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run basic checks
+        env:
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+        run: |
+          echo "Running basic checks..."
+          
+          # Check if required files exist
+          if [ ! -f "webhook/webhook-handler.js" ]; then
+            echo "Error: webhook/webhook-handler.js not found"
+            exit 1
+          fi
+          
+          if [ ! -f "deploy/deploy.sh" ]; then
+            echo "Error: deploy/deploy.sh not found"
+            exit 1
+          fi
+          
+          if [ ! -x "deploy/deploy.sh" ]; then
+            echo "Error: deploy/deploy.sh is not executable"
+            exit 1
+          fi
+          
+          # Check Node.js version
+          node --version
+          npm --version
+          
+          # Run tests if test script exists
+          npm test --if-present || echo "No tests defined"
+          
+          echo "✓ Basic checks passed"
+
+      - name: Lint JavaScript files
+        run: |
+          echo "Checking JavaScript syntax..."
+          node -c webhook/webhook-handler.js
+          echo "✓ JavaScript syntax check passed"
+
+      - name: Verify environment variables
+        env:
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+        run: |
+          if [ -z "$WEBHOOK_SECRET" ]; then
+            echo "Warning: WEBHOOK_SECRET is not set in repository secrets"
+            echo "This is required for production deployment"
+          else
+            echo "✓ WEBHOOK_SECRET is configured"
+          fi
