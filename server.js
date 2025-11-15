@@ -5,7 +5,20 @@ import express from "express";
 import fetch from "node-fetch";
 import archiver from "archiver";
 import dotenv from "dotenv";
+import { healthCheckHandler } from "./server/health.js";
+
 dotenv.config();
+
+// Initialize database and queue if configured (for autonomous mode)
+// These will gracefully handle missing configuration
+import { initDB } from "./server/db.js";
+import { initQueue } from "./server/queue.js";
+import { initS3 } from "./server/s3.js";
+
+// Initialize services (will log warnings if not configured)
+initDB();
+initQueue();
+initS3();
 
 const app = express();
 app.use(express.json({ limit: "200kb" }));
@@ -13,6 +26,18 @@ app.use(express.json({ limit: "200kb" }));
 const OPENAI_KEY = process.env.OPENAI_KEY;
 const ALLOWED_TOKEN = process.env.ALLOWED_TOKEN || "";
 if (!OPENAI_KEY) console.warn("WARNING: OPENAI_KEY not set in env/replit secrets.");
+
+const inMemoryStore = {}; // { sessionId: { data: JSON } }
+
+// Helper: validate token (simple)
+function checkToken(req) {
+  // token can be provided in body or query (for export)
+  const t = (req.body && req.body.token) || req.query.token || "";
+  return !ALLOWED_TOKEN || t === ALLOWED_TOKEN;
+}
+
+// GET /health -> health check endpoint for Render
+app.get("/health", healthCheckHandler);
 
 const inMemoryStore = {}; // { sessionId: { data: JSON } }
 
