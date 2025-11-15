@@ -8,6 +8,10 @@ import { fileURLToPath } from 'url';
 import fetch from "node-fetch";
 import archiver from "archiver";
 import openaiRouter from './src/routes/openai.js';
+import { healthCheckHandler } from './server/health.js';
+import { enqueueGeneration } from './server/queue.js';
+import { createSession, getSession } from './server/db.js';
+// import { initMigrations } from './server/db.js'; // Uncomment to enable auto-migrations
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,15 +22,19 @@ app.use(express.json({ limit: "1mb" }));
 // Static files
 app.use(express.static(path.join(__dirname)));
 
-const OPENAI_KEY = process.env.OPENAI_KEY;
+const OPENAI_KEY = process.env.OPENAI_KEY || process.env.OPENAI_API_KEY;
 const ALLOWED_TOKEN = process.env.ALLOWED_TOKEN || "";
-if (!OPENAI_KEY) console.warn("WARNING: OPENAI_KEY not set in env/replit secrets.");
+if (!OPENAI_KEY) console.warn("WARNING: OPENAI_KEY (or OPENAI_API_KEY) not set in env/replit secrets.");
+
+// Initialize database migrations on startup (optional)
+// Uncomment to run migrations automatically
+// initMigrations().catch(err => console.error('Migration init failed:', err));
 
 // Mount new OpenAI API routes
 app.use('/api', openaiRouter);
 
-// Health check endpoint
-app.get('/health', (req, res) => res.json({ ok: true }));
+// Health check endpoint with service connectivity checks
+app.get('/health', healthCheckHandler);
 
 const inMemoryStore = {}; // { sessionId: { data: JSON } }
 
@@ -38,13 +46,34 @@ function checkToken(req) {
 }
 
 // POST /generate -> calls OpenAI and stores result in memory
+// Supports async mode: if async=true, enqueues job and returns sessionId
 app.post("/generate", async (req, res) => {
   try {
     if (!checkToken(req)) return res.status(401).json({ error: "Unauthorized: invalid token" });
-    const { brief = "", page_type = "invest", sessionId = "session-1" } = req.body;
+    const { brief = "", page_type = "invest", sessionId = `session-${Date.now()}`, async: asyncMode = false } = req.body;
     if (!brief) return res.status(400).json({ error: "Empty brief" });
 
-    // Build prompt: instruct to respond with strict JSON
+    // Async mode: enqueue job and return sessionId
+    if (asyncMode) {
+      try {
+        // Create session in database
+        await createSession(sessionId, { brief, page_type });
+        
+        // Enqueue generation job
+        await enqueueGeneration(sessionId, { brief, page_type });
+        
+        return res.json({
+          sessionId,
+          status: 'queued',
+          message: 'Generation task enqueued. Use GET /session/:sessionId to check status.',
+        });
+      } catch (err) {
+        console.error('Async generation failed:', err.message);
+        return res.status(500).json({ error: `Failed to enqueue task: ${err.message}` });
+      }
+    }
+
+    // Sync mode (existing behavior): call OpenAI directly
     const userPrompt = `
 You are a JSON generator for a Russian law firm's landing page.
 Input brief: ${brief}
@@ -101,6 +130,30 @@ Do not output anything except the JSON object.
   } catch (err) {
     console.error("Generate error:", err);
     return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /session/:sessionId -> check async generation status
+app.get("/session/:sessionId", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const session = await getSession(sessionId);
+    
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    return res.json({
+      sessionId: session.session_id,
+      status: session.status,
+      artifact_url: session.artifact_url,
+      payload: session.payload,
+      created_at: session.created_at,
+      updated_at: session.updated_at,
+    });
+  } catch (err) {
+    console.error('Session lookup failed:', err.message);
+    return res.status(500).json({ error: 'Failed to retrieve session' });
   }
 });
 
