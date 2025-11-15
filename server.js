@@ -8,6 +8,9 @@ import { fileURLToPath } from 'url';
 import fetch from "node-fetch";
 import archiver from "archiver";
 import openaiRouter from './src/routes/openai.js';
+import { healthCheckHandler } from './server/health.js';
+import { addGenerationJob } from './server/queue.js';
+import { createSession, getSession } from './server/db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,15 +21,15 @@ app.use(express.json({ limit: "1mb" }));
 // Static files
 app.use(express.static(path.join(__dirname)));
 
-const OPENAI_KEY = process.env.OPENAI_KEY;
+const OPENAI_KEY = process.env.OPENAI_KEY || process.env.OPENAI_API_KEY;
 const ALLOWED_TOKEN = process.env.ALLOWED_TOKEN || "";
 if (!OPENAI_KEY) console.warn("WARNING: OPENAI_KEY not set in env/replit secrets.");
 
 // Mount new OpenAI API routes
 app.use('/api', openaiRouter);
 
-// Health check endpoint
-app.get('/health', (req, res) => res.json({ ok: true }));
+// Enhanced health check endpoint
+app.get('/health', healthCheckHandler());
 
 const inMemoryStore = {}; // { sessionId: { data: JSON } }
 
@@ -37,13 +40,34 @@ function checkToken(req) {
   return !ALLOWED_TOKEN || t === ALLOWED_TOKEN;
 }
 
-// POST /generate -> calls OpenAI and stores result in memory
+// POST /generate -> calls OpenAI and stores result in memory or queues async job
 app.post("/generate", async (req, res) => {
   try {
     if (!checkToken(req)) return res.status(401).json({ error: "Unauthorized: invalid token" });
-    const { brief = "", page_type = "invest", sessionId = "session-1" } = req.body;
+    const { brief = "", page_type = "invest", sessionId = "session-1", async = false } = req.body;
     if (!brief) return res.status(400).json({ error: "Empty brief" });
 
+    // If async mode is enabled and infrastructure is available, queue the job
+    if (async) {
+      try {
+        // Create session record in database
+        await createSession(sessionId, { brief, page_type });
+        
+        // Add job to queue
+        await addGenerationJob(sessionId, { brief, page_type });
+        
+        return res.json({
+          sessionId,
+          status: 'pending',
+          message: 'Job queued successfully. Check /status/:sessionId for progress.',
+        });
+      } catch (queueError) {
+        console.warn('Async mode failed, falling back to sync:', queueError.message);
+        // Fall through to synchronous processing
+      }
+    }
+
+    // Synchronous mode (original behavior)
     // Build prompt: instruct to respond with strict JSON
     const userPrompt = `
 You are a JSON generator for a Russian law firm's landing page.
@@ -100,6 +124,50 @@ Do not output anything except the JSON object.
     return res.json(out);
   } catch (err) {
     console.error("Generate error:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /status/:sessionId -> check async job status
+app.get("/status/:sessionId", async (req, res) => {
+  try {
+    if (!checkToken(req)) return res.status(401).json({ error: "Unauthorized: invalid token" });
+    
+    const { sessionId } = req.params;
+    
+    // Try to get session from database
+    try {
+      const session = await getSession(sessionId);
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+
+      const response = {
+        sessionId: session.session_id,
+        status: session.status,
+        createdAt: session.created_at,
+        updatedAt: session.updated_at,
+      };
+
+      if (session.status === 'completed' && session.result) {
+        response.result = session.result;
+      }
+
+      if (session.status === 'failed' && session.error) {
+        response.error = session.error;
+      }
+
+      return res.json(response);
+    } catch (dbError) {
+      // If database not available, return error
+      console.warn('Database not available:', dbError.message);
+      return res.status(503).json({ 
+        error: "Status tracking not available - database not configured",
+        sessionId 
+      });
+    }
+  } catch (err) {
+    console.error("Status check error:", err);
     return res.status(500).json({ error: err.message });
   }
 });
