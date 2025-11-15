@@ -1,0 +1,102 @@
+name: Get GitHub App Installation Token
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_id:
+        description: 'GitHub App ID (опционально, использует секрет если пусто)'
+        required: false
+        type: string
+      installation_id:
+        description: 'Installation ID (опционально, использует секрет если пусто)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  get_token:
+    name: Get Installation Token
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: |
+          npm install @octokit/auth-app
+
+      - name: Get Installation Token
+        env:
+          APP_ID: ${{ inputs.app_id || secrets.CREATELEN_APP_ID }}
+          PRIVATE_KEY: ${{ secrets.CREATELEN_APP_PRIVATE_KEY }}
+          INSTALLATION_ID: ${{ inputs.installation_id || secrets.CREATELEN_APP_INSTALLATION_ID }}
+        run: |
+          node << 'EOF'
+          const { createAppAuth } = require('@octokit/auth-app');
+          
+          async function getToken() {
+            try {
+              const appId = process.env.APP_ID;
+              const privateKey = process.env.PRIVATE_KEY;
+              const installationId = process.env.INSTALLATION_ID;
+              
+              if (!appId || !privateKey || !installationId) {
+                console.error('❌ Ошибка: Не все необходимые параметры настроены');
+                console.error('Необходимо настроить секреты:');
+                console.error('  - CREATELEN_APP_ID');
+                console.error('  - CREATELEN_APP_PRIVATE_KEY');
+                console.error('  - CREATELEN_APP_INSTALLATION_ID');
+                process.exit(1);
+              }
+              
+              const auth = createAppAuth({
+                appId: appId,
+                privateKey: privateKey,
+                installationId: installationId,
+              });
+              
+              const { token, expiresAt } = await auth({ type: 'installation' });
+              
+              console.log('✅ Installation Token получен успешно');
+              console.log('');
+              console.log('Token:', token);
+              console.log('Expires at:', expiresAt);
+              console.log('');
+              console.log('Использование в других шагах:');
+              console.log('  echo "INSTALLATION_TOKEN=' + token + '" >> $GITHUB_ENV');
+              console.log('');
+              console.log('⚠️  ВНИМАНИЕ: Токен действителен до:', expiresAt);
+              
+              // Экспорт в GITHUB_ENV для использования в других шагах
+              const fs = require('fs');
+              fs.appendFileSync(process.env.GITHUB_ENV, `INSTALLATION_TOKEN=${token}\n`);
+              
+            } catch (error) {
+              console.error('❌ Ошибка при получении токена:', error.message);
+              process.exit(1);
+            }
+          }
+          
+          getToken();
+          EOF
+
+      - name: Verify Token
+        if: env.INSTALLATION_TOKEN != ''
+        run: |
+          echo "✅ INSTALLATION_TOKEN успешно установлен в GITHUB_ENV"
+          echo "Токен может быть использован в последующих шагах через \${{ env.INSTALLATION_TOKEN }}"
+          
+          # Пример использования токена для вызова GitHub API
+          echo ""
+          echo "Тестирование токена с GitHub API..."
+          curl -s -H "Authorization: Bearer $INSTALLATION_TOKEN" \
+               -H "Accept: application/vnd.github+json" \
+               https://api.github.com/installation/repositories \
+               | jq -r '.repositories[] | "  - \(.full_name)"' || echo "Доступных репозиториев не найдено"
