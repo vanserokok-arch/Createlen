@@ -1,0 +1,73 @@
+# render.yaml — Render configuration for web service and worker
+# Deploy branch: copilot/add-openai-scaffold
+services:
+  # Web service (API server)
+  - type: web
+    name: createlen-web
+    runtime: node
+    region: oregon
+    plan: starter
+    branch: copilot/add-openai-scaffold
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ALLOWED_TOKEN
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_REGION
+        value: us-east-1
+      - key: RENDER_API_KEY
+        sync: false
+      - key: RENDER_SERVICE_ID
+        sync: false
+
+  # Worker service (BullMQ worker)
+  - type: worker
+    name: createlen-worker
+    runtime: node
+    region: oregon
+    plan: starter
+    branch: copilot/add-openai-scaffold
+    buildCommand: npm ci
+    startCommand: npm run worker
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_REGION
+        value: us-east-1
+
+# TODO: Add database and Redis services if using Render-managed services
+# databases:
+#   - name: createlen-postgres
+#     plan: starter
+#     region: oregon

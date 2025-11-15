@@ -1,8 +1,8 @@
 import OpenAI from "openai";
 
 export function getClient() {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error('OPENAI_API_KEY not configured');
+  const apiKey = process.env.OPENAI_KEY || process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error('OPENAI_KEY or OPENAI_API_KEY not configured');
   return new OpenAI({ apiKey });
 }
 

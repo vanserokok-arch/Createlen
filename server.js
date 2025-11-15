@@ -18,7 +18,7 @@ app.use(express.json({ limit: "1mb" }));
 // Static files
 app.use(express.static(path.join(__dirname)));
 
-const OPENAI_KEY = process.env.OPENAI_KEY;
+const OPENAI_KEY = process.env.OPENAI_KEY || process.env.OPENAI_API_KEY;
 const ALLOWED_TOKEN = process.env.ALLOWED_TOKEN || "";
 if (!OPENAI_KEY) console.warn("WARNING: OPENAI_KEY not set in env/replit secrets.");
 
@@ -37,12 +37,42 @@ function checkToken(req) {
   return !ALLOWED_TOKEN || t === ALLOWED_TOKEN;
 }
 
-// POST /generate -> calls OpenAI and stores result in memory
+// POST /generate -> calls OpenAI and stores result in memory (or queues for async processing)
 app.post("/generate", async (req, res) => {
   try {
     if (!checkToken(req)) return res.status(401).json({ error: "Unauthorized: invalid token" });
-    const { brief = "", page_type = "invest", sessionId = "session-1" } = req.body;
+    const { brief = "", page_type = "invest", sessionId = "session-1", async = false } = req.body;
     if (!brief) return res.status(400).json({ error: "Empty brief" });
+
+    // Handle async mode - enqueue task and return immediately
+    if (async) {
+      try {
+        // Dynamically import queue module (allows graceful failure if Redis not configured)
+        const { enqueueGeneration } = await import('./server/queue.js');
+        const { createSession } = await import('./server/db.js');
+        
+        // Create session record in database
+        await createSession(sessionId, { brief, page_type });
+        
+        // Enqueue generation task
+        await enqueueGeneration(sessionId, { brief, page_type });
+        
+        return res.json({
+          sessionId,
+          status: 'pending',
+          message: 'Generation queued',
+        });
+      } catch (err) {
+        console.error('Async generation failed:', err);
+        return res.status(500).json({ 
+          error: 'Failed to enqueue generation',
+          details: err.message,
+          hint: 'Ensure REDIS_URL and DATABASE_URL are configured'
+        });
+      }
+    }
+
+    // Synchronous mode - process immediately (existing behavior)
 
     // Build prompt: instruct to respond with strict JSON
     const userPrompt = `
@@ -134,6 +164,53 @@ app.get("/export", async (req, res) => {
   archive.append(JSON.stringify(data, null, 2), { name: "landing.json" });
 
   archive.finalize();
+});
+
+// GET /api/session/:sessionId -> returns session status and data
+app.get("/api/session/:sessionId", async (req, res) => {
+  try {
+    if (!checkToken(req)) return res.status(401).json({ error: "Unauthorized" });
+    
+    const { sessionId } = req.params;
+    
+    // Try to get from database
+    try {
+      const { getSession } = await import('./server/db.js');
+      const session = await getSession(sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+      
+      return res.json({
+        sessionId: session.session_id,
+        status: session.status,
+        payload: session.payload,
+        artifact_url: session.artifact_url,
+        created_at: session.created_at,
+        updated_at: session.updated_at,
+      });
+    } catch (err) {
+      // If database not available, check in-memory store (for sync mode)
+      const item = inMemoryStore[sessionId];
+      if (item && item.data) {
+        return res.json({
+          sessionId,
+          status: 'completed',
+          payload: item.data,
+          created_at: new Date(item.createdAt).toISOString(),
+        });
+      }
+      
+      return res.status(404).json({ 
+        error: "Session not found",
+        hint: "Ensure DATABASE_URL is configured for async mode"
+      });
+    }
+  } catch (err) {
+    console.error('Session lookup error:', err);
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
