@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import fetch from "node-fetch";
 import archiver from "archiver";
 import openaiRouter from './src/routes/openai.js';
+import healthRouter from './server/health.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,15 +19,33 @@ app.use(express.json({ limit: "1mb" }));
 // Static files
 app.use(express.static(path.join(__dirname)));
 
-const OPENAI_KEY = process.env.OPENAI_KEY;
+const OPENAI_KEY = process.env.OPENAI_KEY || process.env.OPENAI_API_KEY;
 const ALLOWED_TOKEN = process.env.ALLOWED_TOKEN || "";
 if (!OPENAI_KEY) console.warn("WARNING: OPENAI_KEY not set in env/replit secrets.");
 
 // Mount new OpenAI API routes
 app.use('/api', openaiRouter);
 
-// Health check endpoint
-app.get('/health', (req, res) => res.json({ ok: true }));
+// Mount health check routes
+app.use(healthRouter);
+
+// Lazy load async modules (only when needed)
+let asyncModules = null;
+async function getAsyncModules() {
+  if (!asyncModules) {
+    try {
+      const [db, queue] = await Promise.all([
+        import('./server/db.js'),
+        import('./server/queue.js')
+      ]);
+      asyncModules = { db, queue };
+    } catch (err) {
+      console.error('Failed to load async modules:', err.message);
+      throw new Error('Async mode not configured. Set DATABASE_URL and REDIS_URL.');
+    }
+  }
+  return asyncModules;
+}
 
 const inMemoryStore = {}; // { sessionId: { data: JSON } }
 
@@ -37,13 +56,39 @@ function checkToken(req) {
   return !ALLOWED_TOKEN || t === ALLOWED_TOKEN;
 }
 
-// POST /generate -> calls OpenAI and stores result in memory
+// POST /generate -> calls OpenAI and stores result in memory or queue for async
 app.post("/generate", async (req, res) => {
   try {
     if (!checkToken(req)) return res.status(401).json({ error: "Unauthorized: invalid token" });
-    const { brief = "", page_type = "invest", sessionId = "session-1" } = req.body;
+    const { brief = "", page_type = "invest", sessionId = "session-1", async = false } = req.body;
     if (!brief) return res.status(400).json({ error: "Empty brief" });
 
+    // ASYNC MODE: Queue job for background processing
+    if (async) {
+      try {
+        const modules = await getAsyncModules();
+        
+        // Create session in database
+        await modules.db.createSession(sessionId, { brief, page_type });
+        
+        // Add job to queue
+        await modules.queue.addGenerationJob(sessionId, { brief, page_type });
+        
+        return res.json({ 
+          sessionId, 
+          status: 'pending',
+          message: 'Job queued for processing. Use /status/:sessionId to check progress.'
+        });
+      } catch (err) {
+        console.error('Async mode error:', err);
+        return res.status(500).json({ 
+          error: 'Async mode not available', 
+          details: err.message 
+        });
+      }
+    }
+
+    // SYNC MODE: Process immediately (existing behavior)
     // Build prompt: instruct to respond with strict JSON
     const userPrompt = `
 You are a JSON generator for a Russian law firm's landing page.
@@ -100,6 +145,41 @@ Do not output anything except the JSON object.
     return res.json(out);
   } catch (err) {
     console.error("Generate error:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /status/:sessionId -> check async job status
+app.get("/status/:sessionId", async (req, res) => {
+  try {
+    if (!checkToken(req)) return res.status(401).json({ error: "Unauthorized: invalid token" });
+    
+    const { sessionId } = req.params;
+    
+    try {
+      const modules = await getAsyncModules();
+      const session = await modules.db.getSession(sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+      
+      return res.json({
+        sessionId: session.session_id,
+        status: session.status,
+        resultUrl: session.result_url,
+        createdAt: session.created_at,
+        updatedAt: session.updated_at
+      });
+    } catch (err) {
+      console.error('Status check error:', err);
+      return res.status(500).json({ 
+        error: 'Status check failed', 
+        details: err.message 
+      });
+    }
+  } catch (err) {
+    console.error("Status error:", err);
     return res.status(500).json({ error: err.message });
   }
 });

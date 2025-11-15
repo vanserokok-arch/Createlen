@@ -1,0 +1,75 @@
+# render.yaml — Render.com deployment configuration
+# This file defines services for web app and background worker
+
+services:
+  # Web Service - Express API server
+  - type: web
+    name: createlen-web
+    env: node
+    region: oregon
+    plan: starter
+    branch: copilot/add-openai-scaffold
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_KEY
+        sync: false
+      - key: ALLOWED_TOKEN
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_REGION
+        value: us-east-1
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+
+  # Background Worker - Processes async generation jobs
+  - type: worker
+    name: createlen-worker
+    env: node
+    region: oregon
+    plan: starter
+    branch: copilot/add-openai-scaffold
+    buildCommand: npm ci
+    startCommand: npm run worker
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_KEY
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_REGION
+        value: us-east-1
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+
+# Database - Using external Supabase Postgres (configured via DATABASE_URL)
+# Redis - Using external Upstash Redis (configured via REDIS_URL)
+# S3 - Using external AWS S3 (configured via S3_* env vars)
+
+# Instructions:
+# 1. Create a new Render Blueprint from this file
+# 2. Configure environment variables in Render dashboard
+# 3. Set up external services (Supabase, Upstash, AWS S3)
+# 4. Run migrations: Connect to web service shell and run `npm run migrate`
+# 5. Monitor logs and health checks

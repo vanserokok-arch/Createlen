@@ -1,3 +1,13 @@
 .DS_Store
 .env
 node_modules/
+*.log
+dist/
+build/
+coverage/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
