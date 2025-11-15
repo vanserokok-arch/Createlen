@@ -48,6 +48,9 @@ app.get('/health', (req, res) => {
 });
 
 // Webhook endpoint
+// NOTE: This endpoint performs signature verification but does not implement rate limiting.
+// For production use, consider adding rate limiting middleware (e.g., express-rate-limit)
+// to protect against abuse, especially if webhook secret is compromised.
 app.post('/webhook', (req, res) => {
   // Verify signature
   if (!verifySignature(req)) {

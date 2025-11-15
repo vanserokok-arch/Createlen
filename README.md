@@ -183,10 +183,12 @@ To add this secret:
 - All sensitive data is stored in `/etc/createlen/.env` outside the repository
 - The systemd service runs with limited privileges (`www-data` user)
 - SSL/TLS is enforced via certbot and Let's Encrypt
+- **Rate limiting not implemented**: Consider adding rate limiting middleware (e.g., express-rate-limit) for production
 
 ## Next Steps
 
 - Implement actual event processing logic in `webhook/webhook-handler.js`
+- **Add rate limiting to the webhook endpoint** (e.g., using express-rate-limit package)
 - Add monitoring and alerting for the webhook service
 - Set up log rotation for service logs
 - Configure firewall rules (allow ports 80, 443, and SSH only)
