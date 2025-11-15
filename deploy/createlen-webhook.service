@@ -1,0 +1,33 @@
+[Unit]
+Description=Createlen GitHub App Webhook Listener
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/createlen/webhook
+EnvironmentFile=/etc/createlen/.env
+
+# Start the webhook handler
+ExecStart=/usr/bin/node /opt/createlen/webhook/webhook-handler.js
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/createlen
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=createlen-webhook
+
+[Install]
+WantedBy=multi-user.target
