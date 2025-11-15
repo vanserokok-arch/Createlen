@@ -6,12 +6,18 @@
     "node": ">=18"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "worker": "node worker/worker.js",
+    "migrate": "psql $DATABASE_URL < scripts/migrate.sql"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.679.0",
+    "@aws-sdk/s3-request-presigner": "^3.679.0",
     "archiver": "^5.3.2",
+    "bullmq": "^5.28.1",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
-    "node-fetch": "^3.3.1"
+    "node-fetch": "^3.3.1",
+    "pg": "^8.13.1"
   }
 }

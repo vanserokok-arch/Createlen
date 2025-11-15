@@ -1,0 +1,95 @@
+# Render.com configuration for Createlen autonomous landing page generation system
+# This file defines two services: Web (Express API) and Worker (BullMQ background jobs)
+
+services:
+  # Web Service - Express API Server
+  - type: web
+    name: createlen-web
+    env: node
+    region: frankfurt  # Change as needed
+    plan: starter  # Free tier available
+    branch: copilot/add-openai-scaffold
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      # OpenAI API Key - MUST be set in Render dashboard
+      - key: OPENAI_KEY
+        sync: false
+      # Authentication token - MUST be set in Render dashboard
+      - key: ALLOWED_TOKEN
+        sync: false
+      # S3 Configuration - MUST be set in Render dashboard
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_REGION
+        value: us-east-1
+      # Database URL - auto-populated if using Render PostgreSQL
+      - key: DATABASE_URL
+        fromDatabase:
+          name: createlen-db
+          property: connectionString
+      # Redis URL - auto-populated if using Render Redis
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: createlen-redis
+          property: connectionString
+
+  # Worker Service - Background Job Processor
+  - type: worker
+    name: createlen-worker
+    env: node
+    region: frankfurt  # Should match web service region
+    plan: starter
+    branch: copilot/add-openai-scaffold
+    buildCommand: npm install
+    startCommand: node worker/worker.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # OpenAI API Key - MUST be set in Render dashboard
+      - key: OPENAI_KEY
+        sync: false
+      # S3 Configuration - MUST be set in Render dashboard
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_REGION
+        value: us-east-1
+      # Database URL
+      - key: DATABASE_URL
+        fromDatabase:
+          name: createlen-db
+          property: connectionString
+      # Redis URL
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: createlen-redis
+          property: connectionString
+
+# Database - PostgreSQL
+databases:
+  - name: createlen-db
+    databaseName: createlen
+    user: createlen
+    plan: starter  # Free tier available
+    region: frankfurt
+
+# Redis - For job queue
+  - name: createlen-redis
+    plan: starter  # Free tier available
+    region: frankfurt
+    maxmemoryPolicy: noeviction  # Recommended for job queues
