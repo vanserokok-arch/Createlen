@@ -191,7 +191,10 @@ app.get("/export", async (req, res) => {
 
 function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+// Only start server if not in test mode
+if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+}
 
 export default app;
