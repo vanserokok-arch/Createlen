@@ -1,5 +1,14 @@
 name: CI
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+      - copilot/add-openai-scaffold
+      - copilot/autonomous-skeleton
+  pull_request:
+    branches:
+      - main
+      - copilot/add-openai-scaffold
 
 permissions:
   contents: read

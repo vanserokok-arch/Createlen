@@ -25,8 +25,44 @@ if (!OPENAI_KEY) console.warn("WARNING: OPENAI_KEY not set in env/replit secrets
 // Mount new OpenAI API routes
 app.use('/api', openaiRouter);
 
-// Health check endpoint
-app.get('/health', (req, res) => res.json({ ok: true }));
+// Health check endpoints
+app.get('/health', async (req, res) => {
+  try {
+    // Check if async infrastructure is configured
+    const hasAsyncInfra = !!(process.env.DATABASE_URL && process.env.REDIS_URL);
+    
+    if (hasAsyncInfra) {
+      const { healthCheck } = await import('./server/health.js');
+      return healthCheck(req, res);
+    } else {
+      // Simple health check when async infrastructure is not configured
+      return res.json({ 
+        ok: true, 
+        timestamp: new Date().toISOString(),
+        mode: 'sync-only',
+      });
+    }
+  } catch (err) {
+    // Fallback to simple health check if module not available
+    return res.json({ ok: true, timestamp: new Date().toISOString() });
+  }
+});
+
+app.get('/health/live', (req, res) => res.json({ ok: true, timestamp: new Date().toISOString() }));
+
+app.get('/health/ready', async (req, res) => {
+  try {
+    const hasAsyncInfra = !!(process.env.DATABASE_URL && process.env.REDIS_URL);
+    if (hasAsyncInfra) {
+      const { readinessCheck } = await import('./server/health.js');
+      return readinessCheck(req, res);
+    } else {
+      return res.json({ ready: true, timestamp: new Date().toISOString() });
+    }
+  } catch (err) {
+    return res.json({ ready: true, timestamp: new Date().toISOString() });
+  }
+});
 
 const inMemoryStore = {}; // { sessionId: { data: JSON } }
 
@@ -37,13 +73,40 @@ function checkToken(req) {
   return !ALLOWED_TOKEN || t === ALLOWED_TOKEN;
 }
 
-// POST /generate -> calls OpenAI and stores result in memory
+// POST /generate -> calls OpenAI and stores result in memory (sync) or enqueues job (async)
 app.post("/generate", async (req, res) => {
   try {
     if (!checkToken(req)) return res.status(401).json({ error: "Unauthorized: invalid token" });
-    const { brief = "", page_type = "invest", sessionId = "session-1" } = req.body;
+    const { brief = "", page_type = "invest", sessionId = "session-1", async = false } = req.body;
     if (!brief) return res.status(400).json({ error: "Empty brief" });
 
+    // Async mode: enqueue job for background processing
+    if (async) {
+      try {
+        // Dynamically import queue and db modules only when needed
+        const { addGenerationJob } = await import('./server/queue.js');
+        const { createSession } = await import('./server/db.js');
+        
+        // Create session record
+        await createSession(sessionId, { brief, page_type });
+        
+        // Enqueue job
+        const jobInfo = await addGenerationJob(sessionId, { brief, page_type });
+        
+        return res.json({
+          status: 'queued',
+          sessionId,
+          jobId: jobInfo.jobId,
+          message: 'Job enqueued for processing. Check status later.',
+        });
+      } catch (asyncErr) {
+        console.error('Async job enqueue error:', asyncErr);
+        // Fall back to sync mode if async infrastructure is not available
+        console.warn('Async mode unavailable, falling back to sync mode');
+      }
+    }
+
+    // Sync mode: original behavior
     // Build prompt: instruct to respond with strict JSON
     const userPrompt = `
 You are a JSON generator for a Russian law firm's landing page.
@@ -100,6 +163,65 @@ Do not output anything except the JSON object.
     return res.json(out);
   } catch (err) {
     console.error("Generate error:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /status/:sessionId -> check generation status (async mode)
+app.get("/status/:sessionId", async (req, res) => {
+  try {
+    if (!checkToken(req)) return res.status(401).json({ error: "Unauthorized: invalid token" });
+    
+    const { sessionId } = req.params;
+    
+    // Try to get session from database
+    try {
+      const { getSession } = await import('./server/db.js');
+      const session = await getSession(sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+      
+      const response = {
+        sessionId: session.session_id,
+        status: session.status,
+        createdAt: session.created_at,
+        updatedAt: session.updated_at,
+      };
+      
+      // If completed, include download URLs
+      if (session.status === 'completed' && session.result_url) {
+        try {
+          response.resultUrls = JSON.parse(session.result_url);
+        } catch (e) {
+          response.resultUrls = session.result_url;
+        }
+      }
+      
+      // If failed, include error message
+      if (session.status === 'failed' && session.error_message) {
+        response.errorMessage = session.error_message;
+      }
+      
+      return res.json(response);
+      
+    } catch (dbErr) {
+      // Fallback to in-memory store if database is not available
+      const item = inMemoryStore[sessionId];
+      if (!item) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+      
+      return res.json({
+        sessionId,
+        status: 'completed',
+        data: item.data,
+        createdAt: new Date(item.createdAt).toISOString(),
+      });
+    }
+  } catch (err) {
+    console.error("Status check error:", err);
     return res.status(500).json({ error: err.message });
   }
 });
