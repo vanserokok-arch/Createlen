@@ -6,7 +6,8 @@
     "node": ">=18"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "webhook": "node webhook/webhook-handler.js"
   },
   "dependencies": {
     "archiver": "^5.3.2",

@@ -1,0 +1,59 @@
+name: Create Webhook Deploy PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch_name:
+        description: 'Branch name for webhook deploy'
+        required: false
+        default: 'chore/add-webhook-deploy'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if branch exists
+        id: check_branch
+        run: |
+          BRANCH_NAME="${{ github.event.inputs.branch_name || 'chore/add-webhook-deploy' }}"
+          if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Branch $BRANCH_NAME already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Branch $BRANCH_NAME does not exist"
+          fi
+
+      - name: Create branch and PR
+        if: steps.check_branch.outputs.exists == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ github.event.inputs.branch_name || 'chore/add-webhook-deploy' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Create and push branch
+          git checkout -b "$BRANCH_NAME"
+          git push origin "$BRANCH_NAME"
+          
+          # Create PR using GitHub CLI
+          gh pr create \
+            --title "chore: add webhook listener and deployment infrastructure" \
+            --body "Automated PR to add webhook listener, deployment scripts, and configuration files for GitHub App integration." \
+            --base main \
+            --head "$BRANCH_NAME"
+
+      - name: Skip if branch exists
+        if: steps.check_branch.outputs.exists == 'true'
+        run: |
+          echo "Branch already exists, skipping PR creation"
