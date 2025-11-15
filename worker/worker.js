@@ -2,7 +2,7 @@
 import 'dotenv/config';
 import { Worker } from 'bullmq';
 import OpenAI from 'openai';
-import { updateSession, getSession } from '../server/db.js';
+import { updateSession } from '../server/db.js';
 import { uploadToS3 } from '../server/s3.js';
 
 // TODO: Add job progress tracking

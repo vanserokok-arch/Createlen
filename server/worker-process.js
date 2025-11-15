@@ -9,10 +9,10 @@
 
 /**
  * Spawn a worker process
- * @param {object} options - Worker configuration options
+ * @param {object} _options - Worker configuration options (unused placeholder)
  * @returns {ChildProcess} Worker process handle
  */
-export function spawnWorker(options = {}) {
+export function spawnWorker(_options = {}) {
   // Placeholder for worker spawning logic
   // In production, this could use child_process.spawn or cluster module
   console.log('Worker spawning not implemented yet');

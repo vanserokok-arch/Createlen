@@ -1,6 +1,6 @@
 // server/generate.js — Landing page generation logic with async support
 import OpenAI from 'openai';
-import { createSession, updateSession, getSession } from './db.js';
+import { createSession, getSession } from './db.js';
 import { addGenerationJob } from './queue.js';
 import { randomBytes } from 'crypto';
 
