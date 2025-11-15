@@ -1,0 +1,16 @@
+[Unit]
+Description=Createlen webhook listener
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/createlen
+EnvironmentFile=/etc/createlen/.env
+ExecStart=/usr/bin/node /opt/createlen/webhook-handler.js
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
