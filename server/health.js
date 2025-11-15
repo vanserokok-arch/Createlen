@@ -6,6 +6,10 @@ const router = express.Router();
 /**
  * Health check endpoint
  * Checks database connection and returns service status
+ * 
+ * Note: This endpoint is intentionally not rate-limited as it's used by
+ * monitoring systems and load balancers for health checks. The database
+ * query is minimal (SELECT 1) and does not expose sensitive data.
  */
 router.get('/health', async (req, res) => {
   const status = {
