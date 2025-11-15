@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, chore/add-webhook-deploy ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [20.x]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Check webhook handler exists
+      run: |
+        if [ ! -f webhook/webhook-handler.js ]; then
+          echo "ERROR: webhook/webhook-handler.js not found"
+          exit 1
+        fi
+        echo "✓ Webhook handler found"
+    
+    - name: Verify deployment files exist
+      run: |
+        files=(
+          "deploy/deploy.sh"
+          "deploy/nginx.createlen.conf"
+          "deploy/createlen-webhook.service"
+          "etc/createlen/.env.example"
+        )
+        for file in "${files[@]}"; do
+          if [ ! -f "$file" ]; then
+            echo "ERROR: $file not found"
+            exit 1
+          fi
+          echo "✓ $file found"
+        done
+    
+    - name: Check deploy script is executable
+      run: |
+        if [ ! -x deploy/deploy.sh ]; then
+          echo "ERROR: deploy.sh is not executable"
+          exit 1
+        fi
+        echo "✓ deploy.sh is executable"
+    
+    - name: Validate webhook handler syntax
+      run: node --check webhook/webhook-handler.js
+    
+    - name: Test with WEBHOOK_SECRET
+      env:
+        WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+      run: |
+        if [ -z "$WEBHOOK_SECRET" ]; then
+          echo "WARNING: WEBHOOK_SECRET not set in repository secrets"
+          echo "Setting dummy value for test"
+          export WEBHOOK_SECRET="test_secret_for_ci_validation_only"
+        fi
+        
+        # Start webhook handler in background
+        PORT=3000 node webhook/webhook-handler.js &
+        WEBHOOK_PID=$!
+        
+        # Wait for server to start
+        sleep 3
+        
+        # Test health endpoint
+        response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/health)
+        if [ "$response" -eq 200 ]; then
+          echo "✓ Health endpoint responding correctly"
+        else
+          echo "ERROR: Health endpoint returned $response"
+          kill $WEBHOOK_PID
+          exit 1
+        fi
+        
+        # Clean up
+        kill $WEBHOOK_PID
+        echo "✓ Webhook handler tests passed"
+    
+    - name: Check for secrets in code
+      run: |
+        if grep -r "sk-" webhook/ deploy/ 2>/dev/null | grep -v "\.example" | grep -v "^Binary"; then
+          echo "ERROR: Potential secrets found in code"
+          exit 1
+        fi
+        echo "✓ No hardcoded secrets detected"
