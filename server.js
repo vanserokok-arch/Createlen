@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import fetch from "node-fetch";
 import archiver from "archiver";
 import openaiRouter from './src/routes/openai.js';
+import healthRouter from './server/health.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,15 +19,34 @@ app.use(express.json({ limit: "1mb" }));
 // Static files
 app.use(express.static(path.join(__dirname)));
 
-const OPENAI_KEY = process.env.OPENAI_KEY;
+// Support both OPENAI_KEY and OPENAI_API_KEY for compatibility
+const OPENAI_KEY = process.env.OPENAI_KEY || process.env.OPENAI_API_KEY;
 const ALLOWED_TOKEN = process.env.ALLOWED_TOKEN || "";
-if (!OPENAI_KEY) console.warn("WARNING: OPENAI_KEY not set in env/replit secrets.");
+if (!OPENAI_KEY) console.warn("WARNING: OPENAI_KEY/OPENAI_API_KEY not set in env/replit secrets.");
 
 // Mount new OpenAI API routes
 app.use('/api', openaiRouter);
 
-// Health check endpoint
-app.get('/health', (req, res) => res.json({ ok: true }));
+// Mount health check router (with DB check)
+app.use(healthRouter);
+
+// Lazy-load queue and db modules (only if needed)
+let queueModule = null;
+let dbModule = null;
+
+async function getQueueModule() {
+  if (!queueModule) {
+    queueModule = await import('./server/queue.js');
+  }
+  return queueModule;
+}
+
+async function getDbModule() {
+  if (!dbModule) {
+    dbModule = await import('./server/db.js');
+  }
+  return dbModule;
+}
 
 const inMemoryStore = {}; // { sessionId: { data: JSON } }
 
@@ -37,13 +57,37 @@ function checkToken(req) {
   return !ALLOWED_TOKEN || t === ALLOWED_TOKEN;
 }
 
-// POST /generate -> calls OpenAI and stores result in memory
+// POST /generate -> calls OpenAI and stores result in memory OR queues async job
 app.post("/generate", async (req, res) => {
   try {
     if (!checkToken(req)) return res.status(401).json({ error: "Unauthorized: invalid token" });
-    const { brief = "", page_type = "invest", sessionId = "session-1" } = req.body;
+    const { brief = "", page_type = "invest", sessionId = "session-1", async = false } = req.body;
     if (!brief) return res.status(400).json({ error: "Empty brief" });
 
+    // ASYNC MODE: Queue job and return immediately
+    if (async) {
+      try {
+        const queueMod = await getQueueModule();
+        const dbMod = await getDbModule();
+        
+        // Create session record in database
+        await dbMod.createSession(sessionId, { brief, page_type });
+        
+        // Add job to queue
+        await queueMod.addGenerationJob(sessionId, { brief, page_type });
+        
+        return res.json({
+          sessionId,
+          status: 'queued',
+          message: 'Job queued for processing. Use /status endpoint to check progress.',
+        });
+      } catch (err) {
+        console.error('Queue error:', err);
+        return res.status(500).json({ error: 'Failed to queue job: ' + err.message });
+      }
+    }
+
+    // SYNC MODE: Process immediately (original behavior)
     // Build prompt: instruct to respond with strict JSON
     const userPrompt = `
 You are a JSON generator for a Russian law firm's landing page.
@@ -100,6 +144,45 @@ Do not output anything except the JSON object.
     return res.json(out);
   } catch (err) {
     console.error("Generate error:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /status?sessionId=... -> check async job status
+app.get("/status", async (req, res) => {
+  try {
+    if (!checkToken(req)) return res.status(401).json({ error: "Unauthorized: invalid token" });
+    const sessionId = req.query.sessionId;
+    
+    if (!sessionId) {
+      return res.status(400).json({ error: "Missing sessionId parameter" });
+    }
+
+    // Get session from database
+    const dbMod = await getDbModule();
+    const session = await dbMod.getSession(sessionId);
+    
+    if (!session) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+
+    // Get job status from queue
+    const queueMod = await getQueueModule();
+    const jobStatus = await queueMod.getJobStatus(sessionId);
+
+    return res.json({
+      sessionId: session.session_id,
+      status: session.status,
+      payload: session.payload,
+      createdAt: session.created_at,
+      updatedAt: session.updated_at,
+      jobStatus: jobStatus ? {
+        state: jobStatus.state,
+        progress: jobStatus.progress,
+      } : null,
+    });
+  } catch (err) {
+    console.error("Status check error:", err);
     return res.status(500).json({ error: err.message });
   }
 });
