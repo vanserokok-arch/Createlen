@@ -8,16 +8,22 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
+    "worker": "node worker/worker.js",
+    "migrate": "node server/db.js migrate",
     "lint": "eslint . --ext .js",
     "test": "vitest",
     "audit": "npm audit --audit-level=moderate"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.679.0",
+    "@aws-sdk/s3-request-presigner": "^3.679.0",
     "archiver": "^5.3.2",
+    "bullmq": "^5.36.0",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "node-fetch": "^3.3.1",
-    "openai": "^4.0.0"
+    "openai": "^4.0.0",
+    "pg": "^8.13.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.22",

@@ -1,0 +1,136 @@
+# Render Blueprint for Createlen Autonomous Landing Generator
+# This configuration deploys a web service and a worker service
+# Branch: copilot/add-openai-scaffold
+
+services:
+  # Web Service - Express API Server
+  - type: web
+    name: createlen-web
+    env: node
+    region: oregon
+    plan: starter
+    branch: copilot/add-openai-scaffold
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    
+    envVars:
+      # Node environment
+      - key: NODE_ENV
+        value: production
+      
+      # OpenAI Configuration
+      - key: OPENAI_API_KEY
+        sync: false
+        # TODO: Set in Render Dashboard - get from OpenAI platform
+      
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      
+      # Authentication
+      - key: ALLOWED_TOKEN
+        sync: false
+        # TODO: Set in Render Dashboard - generate a secure random token
+      
+      # AWS S3 Configuration
+      - key: S3_BUCKET
+        sync: false
+        # TODO: Set in Render Dashboard - your S3 bucket name
+      
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+        # TODO: Set in Render Dashboard - AWS IAM access key
+      
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+        # TODO: Set in Render Dashboard - AWS IAM secret key
+      
+      - key: S3_REGION
+        value: us-east-1
+        # TODO: Change if your bucket is in a different region
+      
+      # Database Configuration (Supabase)
+      - key: DATABASE_URL
+        sync: false
+        # TODO: Set in Render Dashboard - Supabase connection string
+        # Format: postgresql://postgres:[password]@[host]:5432/postgres
+      
+      # Redis Configuration (Upstash)
+      - key: REDIS_URL
+        sync: false
+        # TODO: Set in Render Dashboard - Upstash Redis URL
+        # Format: rediss://default:[password]@[host]:6379
+      
+      # Worker API URL (for worker to call back)
+      - key: API_URL
+        value: https://createlen-web.onrender.com
+        # TODO: Update with your actual Render service URL after deployment
+
+  # Worker Service - Background Job Processor
+  - type: worker
+    name: createlen-worker
+    env: node
+    region: oregon
+    plan: starter
+    branch: copilot/add-openai-scaffold
+    buildCommand: npm ci
+    startCommand: npm run worker
+    
+    envVars:
+      # Node environment
+      - key: NODE_ENV
+        value: production
+      
+      # OpenAI Configuration
+      - key: OPENAI_API_KEY
+        sync: false
+        # TODO: Set in Render Dashboard - same as web service
+      
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      
+      # AWS S3 Configuration
+      - key: S3_BUCKET
+        sync: false
+        # TODO: Set in Render Dashboard - same as web service
+      
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+        # TODO: Set in Render Dashboard - same as web service
+      
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+        # TODO: Set in Render Dashboard - same as web service
+      
+      - key: S3_REGION
+        value: us-east-1
+      
+      # Database Configuration (Supabase)
+      - key: DATABASE_URL
+        sync: false
+        # TODO: Set in Render Dashboard - same as web service
+      
+      # Redis Configuration (Upstash)
+      - key: REDIS_URL
+        sync: false
+        # TODO: Set in Render Dashboard - same as web service
+      
+      # Worker Configuration
+      - key: WORKER_CONCURRENCY
+        value: "2"
+        # TODO: Adjust based on your plan and workload
+      
+      # API URL for calling generation endpoint
+      - key: API_URL
+        value: https://createlen-web.onrender.com
+        # TODO: Update with your actual Render service URL after deployment
+
+# Database migrations should be run manually or via a one-off job:
+# npm run migrate
+# 
+# Instructions:
+# 1. Create services on Render using this blueprint
+# 2. Set all environment variables marked with TODO in the Render Dashboard
+# 3. Deploy both services
+# 4. Run database migrations using Render Shell or one-off job
+# 5. Test the health endpoint: https://createlen-web.onrender.com/health
