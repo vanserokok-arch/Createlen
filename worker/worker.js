@@ -72,7 +72,7 @@ Do not output anything except the JSON object.
     }
 
     const j = await resp.json();
-    const text = j?.choices?.[0]?.message?.content || j?.choices?.[0]?.text || "";
+    const text = j?.choices?.[0]?.message?.content || "";
     
     await job.updateProgress(40);
 
@@ -81,10 +81,11 @@ Do not output anything except the JSON object.
     try { 
       landingData = JSON.parse(text); 
     } catch (e) {
-      const m = text.match(/\{[\s\S]*\}$/);
-      if (m) {
+      // Try to extract JSON from markdown code blocks or extra text
+      const jsonMatch = text.match(/\{(?:[^{}]|(?:\{[^{}]*\}))*\}/);
+      if (jsonMatch) {
         try { 
-          landingData = JSON.parse(m[0]); 
+          landingData = JSON.parse(jsonMatch[0]); 
         } catch (e2) { 
           throw new Error('LLM returned non-JSON'); 
         }
@@ -112,9 +113,10 @@ Do not output anything except the JSON object.
     
     await job.updateProgress(80);
 
-    // Generate presigned URLs (valid for 7 days)
-    const htmlUrl = await getPresignedUrl(htmlKey, 7 * 24 * 3600);
-    const jsonUrl = await getPresignedUrl(jsonKey, 7 * 24 * 3600);
+    // Generate presigned URLs (configurable expiration, default: 7 days)
+    const urlExpiration = parseInt(process.env.S3_PRESIGNED_URL_EXPIRATION) || (7 * 24 * 3600);
+    const htmlUrl = await getPresignedUrl(htmlKey, urlExpiration);
+    const jsonUrl = await getPresignedUrl(jsonKey, urlExpiration);
 
     // Update session with results
     await updateSession(sessionId, {

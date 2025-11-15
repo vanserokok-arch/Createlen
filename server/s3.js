@@ -32,10 +32,12 @@ export function initS3Client() {
     },
   };
 
-  // Support for S3-compatible storage (e.g., Supabase Storage)
+  // Support for S3-compatible storage (e.g., Supabase Storage, MinIO, DigitalOcean Spaces)
   if (S3_ENDPOINT) {
     clientConfig.endpoint = S3_ENDPOINT;
-    clientConfig.forcePathStyle = true; // Required for some S3-compatible services
+    // forcePathStyle uses path-style URLs (bucket.s3.region.amazonaws.com/key)
+    // Required for Supabase Storage, MinIO, and other S3-compatible services
+    clientConfig.forcePathStyle = true;
   }
 
   s3Client = new S3Client(clientConfig);

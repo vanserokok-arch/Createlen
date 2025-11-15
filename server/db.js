@@ -27,7 +27,11 @@ export function initPool() {
 
   pool = new Pool({
     connectionString: DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    ssl: process.env.NODE_ENV === 'production' ? {
+      // Allow disabling certificate verification for development/testing
+      // Set DB_SSL_REJECT_UNAUTHORIZED=false only if needed
+      rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false'
+    } : false,
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,

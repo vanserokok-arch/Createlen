@@ -35,7 +35,9 @@ export function createConnection() {
     // Enable TLS for secure connections (Upstash, Redis Cloud, etc.)
     if (url.protocol === 'rediss:') {
       config.tls = {
-        rejectUnauthorized: false, // Required for some hosted Redis services
+        // Allow disabling certificate verification for development/testing
+        // Set REDIS_TLS_REJECT_UNAUTHORIZED=false only if needed
+        rejectUnauthorized: process.env.REDIS_TLS_REJECT_UNAUTHORIZED !== 'false',
       };
     }
 
