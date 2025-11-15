@@ -1,17 +1,22 @@
 {
-  "name": "keis-replit-generator",
+  "name": "createlen",
   "version": "1.0.0",
   "type": "module",
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server/index.js",
+    "worker": "node server/worker-process.js",
+    "test": "echo 'TODO: Add tests' && exit 0"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.490.0",
     "archiver": "^5.3.2",
+    "bullmq": "^5.1.0",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
-    "node-fetch": "^3.3.1"
+    "node-fetch": "^3.3.1",
+    "pg": "^8.11.3"
   }
 }
