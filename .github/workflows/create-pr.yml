@@ -1,0 +1,29 @@
+name: Create chore/add-webhook-deploy PR
+on:
+  workflow_dispatch:
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure git
+        run: |
+          git config user.name "automation-bot"
+          git config user.email "actions@createlen"
+      - name: Create branch and add files
+        env:
+          BRANCH: chore/add-webhook-deploy
+        run: |
+          git checkout -b $BRANCH
+          # add files (you can echo here or copy from repo)
+          # For safety, use checked-in templates or curl from trusted source
+          git add .
+          git commit -m "chore: add webhook listener, deploy helpers, nginx and systemd configs, CI workflow" || echo "no changes"
+          git push -u origin $BRANCH
+      - name: Create PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.AUTOMATION_PAT }}
+        run: |
+          gh auth login --with-token < <(echo "$GITHUB_TOKEN")
+          gh pr create --title "chore: add webhook listener, deploy helpers, nginx and systemd configs, CI workflow" --body "Adds webhook listener and deploy helpers." --base main --head chore/add-webhook-deploy --repo "${{ github.repository }}"
