@@ -1,0 +1,129 @@
+name: Push and Open PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: 'Source branch to push and create PR from'
+        required: true
+        default: 'copilot/autonomous-skeleton'
+      target_branch:
+        description: 'Target branch for the PR'
+        required: true
+        default: 'main'
+      pr_title:
+        description: 'Pull request title'
+        required: false
+        default: 'Add autonomous skeleton for landing page generation'
+      pr_body:
+        description: 'Pull request body'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  push-and-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.source_branch }}
+          token: ${{ secrets.REPO_PUSH_TOKEN }}
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Push branch
+        run: |
+          git push origin ${{ github.event.inputs.source_branch }}
+
+      - name: Create Pull Request
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.REPO_PUSH_TOKEN }}
+          script: |
+            const prBody = `${{ github.event.inputs.pr_body }}` || `
+            ## Autonomous Skeleton for Landing Page Generation
+            
+            This PR adds a minimal working skeleton for autonomous landing page generation with OpenAI.
+            
+            ### Features
+            - Async generation mode with BullMQ (Upstash Redis)
+            - PostgreSQL database for session tracking
+            - S3 storage for generated artifacts
+            - Health check endpoints
+            - Worker process for background job processing
+            
+            ### Migration Instructions
+            
+            Run the following SQL migration after deploying:
+            
+            \`\`\`bash
+            psql "$DATABASE_URL" < scripts/migrate.sql
+            \`\`\`
+            
+            Or connect to your database and run:
+            
+            \`\`\`sql
+            CREATE TABLE IF NOT EXISTS sessions (
+              id SERIAL PRIMARY KEY,
+              session_id TEXT UNIQUE NOT NULL,
+              status TEXT NOT NULL DEFAULT 'queued',
+              payload JSONB,
+              artifact_url TEXT,
+              created_at TIMESTAMPTZ DEFAULT NOW(),
+              updated_at TIMESTAMPTZ DEFAULT NOW()
+            );
+            \`\`\`
+            
+            ### Environment Variables Required
+            
+            See \`docs/DEPLOY_RENDER.md\` for complete setup instructions.
+            
+            Required variables:
+            - \`OPENAI_KEY\` or \`OPENAI_API_KEY\`
+            - \`ALLOWED_TOKEN\`
+            - \`DATABASE_URL\`
+            - \`REDIS_URL\`
+            - \`S3_BUCKET\`
+            - \`S3_ACCESS_KEY_ID\`
+            - \`S3_SECRET_ACCESS_KEY\`
+            - \`S3_REGION\`
+            
+            ### Testing
+            
+            1. Start the server: \`npm start\`
+            2. Start the worker: \`npm run start:worker\`
+            3. Test async generation:
+               \`\`\`bash
+               curl -X POST http://localhost:3000/api/generate \\
+                 -H "Content-Type: application/json" \\
+                 -d '{"brief": "Investment law firm", "async": true}'
+               \`\`\`
+            `;
+            
+            try {
+              const { data: pr } = await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '${{ github.event.inputs.pr_title }}',
+                body: prBody,
+                head: '${{ github.event.inputs.source_branch }}',
+                base: '${{ github.event.inputs.target_branch }}'
+              });
+              console.log(`Pull request created: ${pr.html_url}`);
+              core.setOutput('pr-url', pr.html_url);
+            } catch (error) {
+              if (error.message.includes('A pull request already exists')) {
+                console.log('Pull request already exists');
+              } else {
+                throw error;
+              }
+            }
