@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test on Node.js 20
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [20.x]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Run lint (if available)
+        run: npm run lint --if-present
+      
+      - name: Run tests (if available)
+        env:
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+        run: npm test --if-present
+      
+      - name: Check webhook handler syntax
+        run: node --check webhook/webhook-handler.js
+      
+      - name: Validate deployment script
+        run: bash -n deploy/deploy.sh
+      
+      - name: Check for common issues
+        run: |
+          echo "Checking for hardcoded secrets..."
+          if grep -r "WEBHOOK_SECRET.*=" --exclude-dir=node_modules --exclude="*.example" . | grep -v "process.env" | grep -v "secrets.WEBHOOK_SECRET" | grep -v ".env.example"; then
+            echo "ERROR: Found potential hardcoded secrets!"
+            exit 1
+          fi
+          echo "No hardcoded secrets found ✓"
+      
+      - name: Summary
+        run: |
+          echo "✓ Dependencies installed successfully"
+          echo "✓ Webhook handler syntax is valid"
+          echo "✓ Deployment script is valid"
+          echo "✓ Security checks passed"
