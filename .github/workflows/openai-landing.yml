@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       BRANCH_NAME: copilot/landing-autogen
+      SPEC: ${{ inputs.spec }}
 
     steps:
       - name: Checkout repository
@@ -50,7 +51,7 @@ jobs:
           if [ ! -f specs/landing-spec.json ]; then
             jq -n \
               --arg title "AI Landing Generator" \
-              --arg desc "${{ inputs.spec }}" \
+              --arg desc "$SPEC" \
               --arg hero_heading "Добро пожаловать" \
               --arg hero_cta "Начать" \
               --arg primary "#4F46E5" \
@@ -83,7 +84,7 @@ jobs:
               }' > specs/landing-spec.json
           else
             # Обновить description и subheading первой секции
-            jq --arg desc "${{ inputs.spec }}" \
+            jq --arg desc "$SPEC" \
                '(.description) = $desc |
                 if (.sections and (.sections | length) > 0)
                 then .sections[0].subheading = $desc
@@ -102,14 +103,21 @@ jobs:
         run: |
           echo "🚀 Запуск генерации лендинга..."
           mkdir -p landing
-          node scripts/openai/landing_agent.js || true
 
-          echo "📊 Результаты генерации:"
-          ls -lh landing/ || true
+          # Запишем stdout/stderr в BUILD_LOG.md, не проваливать шаг при ошибке генерации
+          node scripts/openai/landing_agent.js > landing/BUILD_LOG.md 2>&1 || true
+
+          # Если ключа нет, добавим явную заметку в лог (без печати самого ключа)
+          if [ -z "${OPENAI_API_KEY}" ]; then
+            echo "ERROR: OPENAI_API_KEY is not set. OpenAI requests were not performed." >> landing/BUILD_LOG.md
+          fi
+
+          echo "📊 Результаты генерации:" >> landing/BUILD_LOG.md
+          ls -lh landing/ >> landing/BUILD_LOG.md 2>&1 || true
 
           if [ -f landing/BUILD_LOG.md ]; then
-            echo "📝 Build Log:"
-            cat landing/BUILD_LOG.md
+            echo "📝 Build Log (first lines):"
+            head -n 80 landing/BUILD_LOG.md || true
           fi
 
       - name: Configure Git
@@ -121,9 +129,11 @@ jobs:
         run: |
           echo "Работа с веткой: $BRANCH_NAME"
 
+          # Убедимся, что у нас есть актуальная информация об origin
+          git fetch origin --prune
+
           if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
             echo "Ветка $BRANCH_NAME существует, переключаемся..."
-            git fetch origin "$BRANCH_NAME"
             git checkout "$BRANCH_NAME"
             git pull origin "$BRANCH_NAME"
           else
@@ -135,17 +145,17 @@ jobs:
         run: |
           git add specs/ landing/ || true
 
-          if git diff --staged --quiet; then
+          if git diff --cached --quiet; then
             echo "Нет изменений для коммита"
             exit 0
           fi
 
-          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          TIMESTAMP="2025-11-16 18:34:37"
 
           git commit -m "feat(landing): auto-generate landing page via OpenAI
 
 Generated at: $TIMESTAMP
-Spec: ${{ inputs.spec }}
+Spec: $SPEC
 
 Files:
 - specs/landing-spec.json (updated)
@@ -183,12 +193,13 @@ Files:
           fi
 
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "### Ветка \`$BRANCH_NAME\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Ветка \`$BRANCH_NAME\`` >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
 
           if [ -f landing/BUILD_LOG.md ]; then
             echo "### Build Log" >> "$GITHUB_STEP_SUMMARY"
-            echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "\
+            ```" >> "$GITHUB_STEP_SUMMARY"
             tail -n 20 landing/BUILD_LOG.md >> "$GITHUB_STEP_SUMMARY"
-            echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "\```" >> "$GITHUB_STEP_SUMMARY"
           fi
