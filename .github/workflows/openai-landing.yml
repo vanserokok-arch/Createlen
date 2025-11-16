@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       spec:
-        description: 'Описание лендинга (будет использовано для обновления specs/landing-spec.json)'
+        description: "Описание лендинга (будет использовано для обновления specs/landing-spec.json)"
         required: true
-        default: 'Лендинг для AI-сервиса генерации контента'
+        default: "Лендинг для AI-сервиса генерации контента"
         type: string
 
 permissions:
@@ -16,18 +16,18 @@ jobs:
   generate-landing:
     name: Generate Landing with OpenAI
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.REPO_PUSH_TOKEN }}
+          token: ${{ secrets.REPO_PUSH_TOKEN || github.token }}
           fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: "18"
 
       - name: Install dependencies
         run: npm ci
@@ -36,10 +36,10 @@ jobs:
         run: |
           echo "Обновление спецификации на основе пользовательского ввода..."
           mkdir -p specs
-          
+
           # Если specs/landing-spec.json не существует, создать базовую версию
           if [ ! -f specs/landing-spec.json ]; then
-            cat > specs/landing-spec.json << 'EOF'
+            cat > specs/landing-spec.json <<EOF
           {
             "title": "AI Landing Generator",
             "description": "${{ inputs.spec }}",
@@ -68,7 +68,7 @@ jobs:
             cat specs/landing-spec.json | jq '.description = "${{ inputs.spec }}"' > specs/landing-spec.json.tmp
             mv specs/landing-spec.json.tmp specs/landing-spec.json
           fi
-          
+
           echo "✅ Спецификация обновлена"
           cat specs/landing-spec.json
 
@@ -79,10 +79,10 @@ jobs:
           echo "🚀 Запуск генерации лендинга..."
           mkdir -p landing
           node scripts/openai/landing_agent.js
-          
+
           echo "📊 Результаты генерации:"
-          ls -lh landing/
-          
+          ls -lh landing/ || true
+
           if [ -f landing/BUILD_LOG.md ]; then
             echo "📝 Build Log:"
             cat landing/BUILD_LOG.md
@@ -96,7 +96,7 @@ jobs:
       - name: Create or switch to branch
         run: |
           BRANCH_NAME="copilot/landing-autogen"
-          
+
           # Проверить, существует ли ветка удалённо
           if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
             echo "Ветка $BRANCH_NAME существует, переключаемся..."
@@ -111,13 +111,14 @@ jobs:
       - name: Commit and push changes
         run: |
           git add specs/ landing/
-          
+
           if git diff --staged --quiet; then
             echo "Нет изменений для коммита"
             exit 0
           fi
-          
+
           TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
           git commit -m "feat(landing): auto-generate landing page via OpenAI
 
 Generated at: $TIMESTAMP
@@ -129,42 +130,42 @@ Files:
 - landing/styles.css (generated)
 - landing/script.js (generated)
 - landing/BUILD_LOG.md (build log)"
-          
+
           git push origin copilot/landing-autogen
-          
+
           echo "✅ Изменения запушены в ветку copilot/landing-autogen"
 
       - name: Summary
         if: always()
         run: |
-          echo "## Итоги генерации" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Итоги генерации" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
 
           if [ -f landing/index.html ]; then
-            echo "🟢 HTML создан ($(wc -l < landing/index.html) строк)" >> $GITHUB_STEP_SUMMARY
+            echo "🟢 HTML создан ($(wc -l < landing/index.html) строк)" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "🔴 HTML не создан" >> $GITHUB_STEP_SUMMARY
+            echo "🔴 HTML не создан" >> "$GITHUB_STEP_SUMMARY"
           fi
 
           if [ -f landing/styles.css ]; then
-            echo "🟢 CSS создан ($(wc -l < landing/styles.css) строк)" >> $GITHUB_STEP_SUMMARY
+            echo "🟢 CSS создан ($(wc -l < landing/styles.css) строк)" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "🔴 CSS не создан" >> $GITHUB_STEP_SUMMARY
+            echo "🔴 CSS не создан" >> "$GITHUB_STEP_SUMMARY"
           fi
 
           if [ -f landing/script.js ]; then
-            echo "🟢 JavaScript создан ($(wc -l < landing/script.js) строк)" >> $GITHUB_STEP_SUMMARY
+            echo "🟢 JavaScript создан ($(wc -l < landing/script.js) строк)" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "🔴 JavaScript не создан" >> $GITHUB_STEP_SUMMARY
+            echo "🔴 JavaScript не создан" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Ветка \`copilot/landing-autogen\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Ветка \`copilot/landing-autogen\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
 
           if [ -f landing/BUILD_LOG.md ]; then
-            echo "### Build Log" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-            tail -n 20 landing/BUILD_LOG.md >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "### Build Log" >> "$GITHUB_STEP_SUMMARY"
+            echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+            tail -n 20 landing/BUILD_LOG.md >> "$GITHUB_STEP_SUMMARY"
+            echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
           fi
