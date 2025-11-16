@@ -12,17 +12,25 @@
       "text_light": "#F6F6F6"
     },
     "logo": "use-provided-logo",
+
+    "style_notes": "Строгий премиальный стиль, цвета как bhattlawgroup.com, динамика как jamesonlawoffice.com"
+=======
     "style_notes": "Строгий, уверенный, премиальный стиль. Эстетика как у bhattlawgroup.com, а динамика и параллакс как у jamesonlawoffice.com."
   },
   "page": {
     "route": "/",
     "title": "КЕЙС — юридическая помощь пострадавшим от мошенничества",
     "meta_description": "Юридическая компания КЕЙС помогает вернуть деньги при инвестиционном мошенничестве, взломе Госуслуг или мобильного банка и переводах под влиянием."
+
   },
   "layout": {
     "hero": {
       "title": "Защитим ваши права и вернём ваши деньги",
+
+      "subtitle": "Помогаем людям возвращать потерянные деньги при любой форме мошенничества.",
+=======
       "subtitle": "Юридическая компания КЕЙС помогает людям вернуть потерянные деньги при любой форме мошенничества. Работаем ежедневно. Реальные кейсы, реальные возвраты.",
+
       "cta_primary": "Получить консультацию",
       "cta_secondary": "Узнать стоимость",
       "background": "generate: dark_blue_gradient_with_light_parallax_particles",
@@ -34,11 +42,25 @@
         {
           "icon": "shield-check",
           "title": "12+ лет опыта",
+
+          "text": "Ведём дела по мошенничествам любой сложности."
+=======
           "text": "Мы успешно ведём дела по мошенничествам любой сложности: от инвестиционных схем до кредитов, оформленных мошенниками."
+
         },
         {
           "icon": "scale",
           "title": "Возвращаем деньги",
+
+          "text": "Работаем ежедневно, реальные результаты."
+        },
+        {
+          "icon": "clock-check",
+          "title": "Быстрая реакция",
+          "text": "Начинаем работу уже через 1 час после обращения."
+        }
+      ],
+=======
           "text": "Наша команда ежедневно добивается возврата средств через банки, суды и силовые ведомства."
         },
         {
@@ -48,28 +70,48 @@
         }
       ],
       "background": "generate: soft_legal_texture_with_blur_and_light_lines",
+
       "animated_cards": true
     },
     "fraud_types_section": {
       "title": "Разбираем любые виды мошенничества",
+
+      "cards": [
+        {
+          "title": "Инвестиционное мошенничество",
+          "text": "Ложные брокеры, криптосхемы, псевдо-трейдинг",
+=======
       "subtitle": "Мы работаем с тремя основными категориями, каждая с сотнями успешно решённых случаев.",
       "cards": [
         {
           "title": "Инвестиционное мошенничество",
           "text": "Ложные брокеры, криптоплатформы, псевдо-трейдинг, инвестиционные сайты",
           "cta": "Подробнее",
+
           "link": "/investment-fraud",
           "background": "generate: modern-finance-dark-parallax"
         },
         {
+
+          "title": "Взлом Госуслуг / банков",
+          "text": "Оформленные кредиты, переводы без ведома",
+=======
           "title": "Взлом Госуслуг / мобильного банка",
           "text": "Оформленные на вас кредиты, переводы без вашего ведома",
           "cta": "Подробнее",
+
           "link": "/gosuslugi-hack",
           "background": "generate: cyber-security-blue-glow"
         },
         {
           "title": "Перевод под влиянием",
+
+          "text": "Манипуляции, давление, звонки мошенников",
+          "link": "/influence-fraud",
+          "background": "generate: psychological-pressure-dark-gold"
+        }
+      ]
+=======
           "text": "Телефонные мошенники, психологическое давление, угрозы, социальная инженерия",
           "cta": "Подробнее",
           "link": "/influence-fraud",
@@ -114,14 +156,21 @@
       "hero_background": "dark navy gradient with light-motion particles",
       "fraud_cards": true,
       "advantages_icons": true
+
     }
   },
   "requirements": {
     "responsive": true,
     "fast_load": true,
     "seo": true,
+
+    "form_visible_on_entry": true
+  }
+}
+=======
     "font": "Roboto Slab",
     "logo_visibility": "always_on_top",
     "form_visible_on_entry": true
   }
 }
+
