@@ -87,6 +87,15 @@ jobs:
 
       - name: Create Deploy Log
         if: steps.check_files.outputs.landing_exists == 'true'
+        env:
+          BRANCH: ${{ github.ref_name }}
+          COMMIT: ${{ github.sha }}
+          TRIGGERED_BY: ${{ github.event_name }}
+          SERVICE_ID: ${{ inputs.service_id || secrets.RENDER_SERVICE_ID || 'Not configured' }}
+          RENDER_API_KEY_SET: ${{ secrets.RENDER_API_KEY != '' }}
+          DEPLOY_STATUS: ${{ steps.render_deploy.outputs.deploy_status || 'skipped' }}
+          DEPLOY_MESSAGE: ${{ steps.render_deploy.outputs.deploy_message || 'No deployment attempted' }}
+          DEPLOY_ID: ${{ steps.render_deploy.outputs.deploy_id || 'N/A' }}
         run: |
           mkdir -p landing
 
@@ -96,20 +105,20 @@ jobs:
 # Render Deploy Log
 
 **Timestamp:** $TIMESTAMP
-**Branch:** ${{ github.ref_name }}
-**Commit:** ${{ github.sha }}
-**Triggered by:** ${{ github.event_name }}
+**Branch:** ${BRANCH}
+**Commit:** ${COMMIT}
+**Triggered by:** ${TRIGGERED_BY}
 
 ## Deploy Status
 
-- **Status:** ${{ steps.render_deploy.outputs.deploy_status || 'skipped' }}
-- **Message:** ${{ steps.render_deploy.outputs.deploy_message || 'No deployment attempted' }}
-- **Deploy ID:** ${{ steps.render_deploy.outputs.deploy_id || 'N/A' }}
+- **Status:** ${DEPLOY_STATUS}
+- **Message:** ${DEPLOY_MESSAGE}
+- **Deploy ID:** ${DEPLOY_ID}
 
 ## Configuration
 
-- **Service ID:** ${{ inputs.service_id || secrets.RENDER_SERVICE_ID || 'Not configured' }}
-- **API Key:** ${{ secrets.RENDER_API_KEY && '✅ Configured' || '❌ Not configured' }}
+- **Service ID:** ${SERVICE_ID}
+- **API Key:** $(if [ "${RENDER_API_KEY_SET}" = "true" ]; then echo '✅ Configured'; else echo '❌ Not configured'; fi)
 
 ## Files Deployed
 EOF
@@ -117,7 +126,7 @@ EOF
           if [ -d "landing" ]; then
             echo "" >> landing/DEPLOY_LOG.md
             echo "Landing files:" >> landing/DEPLOY_LOG.md
-            ls -lh landing/ | grep -v "DEPLOY_LOG" >> landing/DEPLOY_LOG.md || true
+            ls -lh landing/ | grep -v "DEPLOY_LOG.md" >> landing/DEPLOY_LOG.md || true
           fi
 
           echo "" >> landing/DEPLOY_LOG.md
@@ -142,9 +151,9 @@ Deploy Status: ${{ steps.render_deploy.outputs.deploy_status || 'skipped' }}
 Deploy ID: ${{ steps.render_deploy.outputs.deploy_id || 'N/A' }}
 
 Triggered by: ${{ github.event_name }}
-Commit: ${{ github.sha }}"
-
-            git push origin "${GITHUB_REF_NAME}"
+Commit: ${{ github.sha }}
+"
+            git push origin "HEAD:${{ github.ref_name }}"
             echo "✅ Deploy log committed and pushed"
           fi
 
