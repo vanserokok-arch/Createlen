@@ -1,0 +1,77 @@
+{
+  "project": "Главная страница юридической компании КЕЙС",
+  "brand": {
+    "name": "КЕЙС — Юридическая компания",
+    "font": "Roboto Slab",
+    "colors": {
+      "primary": "#0A2A43",
+      "secondary": "#0E3B5E",
+      "accent": "#D4AF37",
+      "background": "#F7F9FC",
+      "text_dark": "#1A1A1A",
+      "text_light": "#F6F6F6"
+    },
+    "logo": "use-provided-logo",
+    "style_notes": "Строгий премиальный стиль, цвета как bhattlawgroup.com, динамика как jamesonlawoffice.com"
+  },
+  "layout": {
+    "hero": {
+      "title": "Защитим ваши права и вернём ваши деньги",
+      "subtitle": "Помогаем людям возвращать потерянные деньги при любой форме мошенничества.",
+      "cta_primary": "Получить консультацию",
+      "cta_secondary": "Узнать стоимость",
+      "background": "generate: dark_blue_gradient_with_light_parallax_particles",
+      "parallax": true
+    },
+    "advantages_section": {
+      "title": "Почему выбирают нас",
+      "items": [
+        {
+          "icon": "shield-check",
+          "title": "12+ лет опыта",
+          "text": "Ведём дела по мошенничествам любой сложности."
+        },
+        {
+          "icon": "scale",
+          "title": "Возвращаем деньги",
+          "text": "Работаем ежедневно, реальные результаты."
+        },
+        {
+          "icon": "clock-check",
+          "title": "Быстрая реакция",
+          "text": "Начинаем работу уже через 1 час после обращения."
+        }
+      ],
+      "animated_cards": true
+    },
+    "fraud_types_section": {
+      "title": "Разбираем любые виды мошенничества",
+      "cards": [
+        {
+          "title": "Инвестиционное мошенничество",
+          "text": "Ложные брокеры, криптосхемы, псевдо-трейдинг",
+          "link": "/investment-fraud",
+          "background": "generate: modern-finance-dark-parallax"
+        },
+        {
+          "title": "Взлом Госуслуг / банков",
+          "text": "Оформленные кредиты, переводы без ведома",
+          "link": "/gosuslugi-hack",
+          "background": "generate: cyber-security-blue-glow"
+        },
+        {
+          "title": "Перевод под влиянием",
+          "text": "Манипуляции, давление, звонки мошенников",
+          "link": "/influence-fraud",
+          "background": "generate: psychological-pressure-dark-gold"
+        }
+      ]
+    }
+  },
+  "requirements": {
+    "responsive": true,
+    "fast_load": true,
+    "seo": true,
+    "form_visible_on_entry": true
+  }
+}
