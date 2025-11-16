@@ -1,0 +1,44 @@
+name: Auto Apply Server Patch
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  apply-patch:
+    name: Create PR with improved server.js
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure improved_server.js exists
+        run: |
+          if [ ! -f improved_server.js ]; then
+            echo "ERROR: improved_server.js not found in repository root. Add the file and re-run the workflow." >&2
+            exit 1
+          fi
+
+      - name: Copy improved_server.js to server.js
+        run: |
+          cp improved_server.js server.js
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add server.js
+          git commit -m "chore: apply improved server.js (automated patch)" || echo "No changes to commit"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: apply improved server.js (automated patch)"
+          branch: "auto/apply-server-fix-${{ github.run_id }}"
+          title: "[auto] Apply improved server.js"
+          body: |
+            This PR was created automatically by the workflow to apply the improved server.js.
+            Review the changes, run tests, and merge when ready.
+          labels: automated, ci
