@@ -1,0 +1,46 @@
+{
+  "title": "Createlen - AI-Powered Landing Page Generator",
+  "description": "Автоматическое создание лендингов с помощью AI",
+  "sections": [
+    {
+      "type": "hero",
+      "heading": "Создавайте лендинги за минуты",
+      "subheading": "Используйте силу AI для генерации профессиональных landing pages",
+      "cta": "Начать бесплатно"
+    },
+    {
+      "type": "features",
+      "heading": "Возможности",
+      "items": [
+        {
+          "title": "AI-генерация",
+          "description": "Автоматическая генерация структуры и контента"
+        },
+        {
+          "title": "Адаптивный дизайн",
+          "description": "Работает на всех устройствах"
+        },
+        {
+          "title": "Быстрый деплой",
+          "description": "Публикация за один клик"
+        }
+      ]
+    },
+    {
+      "type": "cta",
+      "heading": "Готовы начать?",
+      "buttonText": "Создать лендинг",
+      "buttonLink": "#start"
+    }
+  ],
+  "colors": {
+    "primary": "#4F46E5",
+    "secondary": "#10B981",
+    "background": "#FFFFFF",
+    "text": "#1F2937"
+  },
+  "fonts": {
+    "heading": "Inter, sans-serif",
+    "body": "Inter, sans-serif"
+  }
+}

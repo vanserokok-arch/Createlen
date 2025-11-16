@@ -1,0 +1,15 @@
+Test commit to verify agent capabilities
+Created at: Sat Nov 15 23:09:24 UTC 2025
+
+This file tests:
+1. Branch creation: test-agent-secret-check
+2. File creation capability
+3. Commit capability (via report_progress)
+
+Secret injection status:
+- COPILOT_AGENT_INJECTED_SECRET_NAMES: OPENAI_API_KEY,REPO_PUSH_TOKEN
+- REPO_PUSH_TOKEN: Available (93 chars)
+- OPENAI_API_KEY: Listed but not accessible as env var
+
+Network connectivity:
+- api.openai.com: DNS resolution BLOCKED (curl exit code 6)
