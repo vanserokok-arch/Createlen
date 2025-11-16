@@ -134,7 +134,7 @@ Files:
           
           echo "✅ Изменения запушены в ветку copilot/landing-autogen"
 
-        - name: Summary
+      - name: Summary
         if: always()
         run: |
           echo "## Итоги генерации" >> $GITHUB_STEP_SUMMARY
