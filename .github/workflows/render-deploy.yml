@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       service_id:
-        description: 'Render Service ID (optional, uses secret if not provided)'
+        description: "Render Service ID (optional, uses secret if not provided)"
         required: false
         type: string
   push:
@@ -23,6 +23,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          token: ${{ secrets.REPO_PUSH_TOKEN || github.token }}
           fetch-depth: 0
 
       - name: Check if landing files exist
@@ -41,8 +42,7 @@ jobs:
         id: render_deploy
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_SERVICE_ID_INPUT: ${{ inputs.service_id }}
-          RENDER_SERVICE_ID_SECRET: ${{ secrets.RENDER_SERVICE_ID }}
+          RENDER_SERVICE_ID: ${{ inputs.service_id || secrets.RENDER_SERVICE_ID }}
         run: |
           if [ -z "$RENDER_API_KEY" ]; then
             echo "❌ RENDER_API_KEY not set in secrets"
@@ -51,24 +51,17 @@ jobs:
             exit 0
           fi
 
-          SERVICE_ID="$RENDER_SERVICE_ID_INPUT"
-          if [ -z "$SERVICE_ID" ]; then
-            SERVICE_ID="$RENDER_SERVICE_ID_SECRET"
-          fi
-
-          if [ -z "$SERVICE_ID" ]; then
+          if [ -z "$RENDER_SERVICE_ID" ]; then
             echo "❌ RENDER_SERVICE_ID not set"
             echo "deploy_status=skipped" >> "$GITHUB_OUTPUT"
             echo "deploy_message=RENDER_SERVICE_ID not configured" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          echo "service_id=$SERVICE_ID" >> "$GITHUB_OUTPUT"
-
-          echo "🚀 Triggering Render deploy for service: $SERVICE_ID"
+          echo "🚀 Triggering Render deploy for service: $RENDER_SERVICE_ID"
 
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-            "https://api.render.com/v1/services/$SERVICE_ID/deploys" \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -d '{"clearCache": false}')
@@ -97,68 +90,40 @@ jobs:
         run: |
           mkdir -p landing
 
-          cat > landing/DEPLOY_LOG.md << 'EOF'
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          cat > landing/DEPLOY_LOG.md <<EOF
 # Render Deploy Log
 
-**Timestamp:** PLACEHOLDER_TIMESTAMP
-**Branch:** PLACEHOLDER_BRANCH
-**Commit:** PLACEHOLDER_COMMIT
-**Triggered by:** PLACEHOLDER_EVENT
+**Timestamp:** $TIMESTAMP
+**Branch:** ${{ github.ref_name }}
+**Commit:** ${{ github.sha }}
+**Triggered by:** ${{ github.event_name }}
 
 ## Deploy Status
 
-- **Status:** PLACEHOLDER_STATUS
-- **Message:** PLACEHOLDER_MESSAGE
-- **Deploy ID:** PLACEHOLDER_DEPLOY_ID
+- **Status:** ${{ steps.render_deploy.outputs.deploy_status || 'skipped' }}
+- **Message:** ${{ steps.render_deploy.outputs.deploy_message || 'No deployment attempted' }}
+- **Deploy ID:** ${{ steps.render_deploy.outputs.deploy_id || 'N/A' }}
 
 ## Configuration
 
-- **Service ID:** PLACEHOLDER_SERVICE_ID
-- **API Key:** PLACEHOLDER_API_KEY_STATUS
+- **Service ID:** ${{ inputs.service_id || secrets.RENDER_SERVICE_ID || 'Not configured' }}
+- **API Key:** ${{ secrets.RENDER_API_KEY && '✅ Configured' || '❌ Not configured' }}
 
 ## Files Deployed
-
 EOF
 
-          # Подставляем реальные значения (чтобы не ломать YAML/expressions)
-          ts="$(date -u +"%Y-%m-%d %H:%M:%S UTC")"
-          sed -i.bak "s/PLACEHOLDER_TIMESTAMP/$ts/" landing/DEPLOY_LOG.md
-          sed -i.bak "s/PLACEHOLDER_BRANCH/${GITHUB_REF_NAME}/" landing/DEPLOY_LOG.md
-          sed -i.bak "s/PLACEHOLDER_COMMIT/${GITHUB_SHA}/" landing/DEPLOY_LOG.md
-          sed -i.bak "s/PLACEHOLDER_EVENT/${GITHUB_EVENT_NAME}/" landing/DEPLOY_LOG.md
-
-          status="${{ steps.render_deploy.outputs.deploy_status }}"
-          [ -z "$status" ] && status="skipped"
-          msg="${{ steps.render_deploy.outputs.deploy_message }}"
-          [ -z "$msg" ] && msg="No deployment attempted"
-          id="${{ steps.render_deploy.outputs.deploy_id }}"
-          [ -z "$id" ] && id="N/A"
-          svc="${{ steps.render_deploy.outputs.service_id }}"
-          [ -z "$svc" ] && svc="Not configured"
-
-          api_status="❌ Not configured"
-          if [ -n "${{ secrets.RENDER_API_KEY }}" ]; then
-            api_status="✅ Configured"
-          fi
-
-          sed -i.bak "s/PLACEHOLDER_STATUS/$status/" landing/DEPLOY_LOG.md
-          sed -i.bak "s/PLACEHOLDER_MESSAGE/$msg/" landing/DEPLOY_LOG.md
-          sed -i.bak "s/PLACEHOLDER_DEPLOY_ID/$id/" landing/DEPLOY_LOG.md
-          sed -i.bak "s/PLACEHOLDER_SERVICE_ID/$svc/" landing/DEPLOY_LOG.md
-          sed -i.bak "s/PLACEHOLDER_API_KEY_STATUS/$api_status/" landing/DEPLOY_LOG.md
-          rm -f landing/DEPLOY_LOG.md.bak
-
           if [ -d "landing" ]; then
-            {
-              echo ""
-              echo "Landing files:"
-              ls -lh landing/ | grep -v "DEPLOY_LOG" || true
-              echo ""
-              echo "---"
-              echo ""
-              echo "To check deploy status, visit: https://dashboard.render.com"
-            } >> landing/DEPLOY_LOG.md
+            echo "" >> landing/DEPLOY_LOG.md
+            echo "Landing files:" >> landing/DEPLOY_LOG.md
+            ls -lh landing/ | grep -v "DEPLOY_LOG" >> landing/DEPLOY_LOG.md || true
           fi
+
+          echo "" >> landing/DEPLOY_LOG.md
+          echo "---" >> landing/DEPLOY_LOG.md
+          echo "" >> landing/DEPLOY_LOG.md
+          echo "To check deploy status, visit: https://dashboard.render.com" >> landing/DEPLOY_LOG.md
 
       - name: Commit Deploy Log
         if: steps.check_files.outputs.landing_exists == 'true'
@@ -171,7 +136,14 @@ EOF
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "chore(deploy): add Render deploy log"
+            git commit -m "chore(deploy): add Render deploy log
+
+Deploy Status: ${{ steps.render_deploy.outputs.deploy_status || 'skipped' }}
+Deploy ID: ${{ steps.render_deploy.outputs.deploy_id || 'N/A' }}
+
+Triggered by: ${{ github.event_name }}
+Commit: ${{ github.sha }}"
+
             git push origin "${GITHUB_REF_NAME}"
             echo "✅ Deploy log committed and pushed"
           fi
@@ -185,8 +157,8 @@ EOF
           if [ "${{ steps.check_files.outputs.landing_exists }}" = "true" ]; then
             echo "✅ Landing files found" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "**Status:** ${{ steps.render_deploy.outputs.deploy_status }}" >> "$GITHUB_STEP_SUMMARY"
-            echo "**Message:** ${{ steps.render_deploy.outputs.deploy_message }}" >> "$GITHUB_STEP_SUMMARY"
+            echo "**Status:** ${{ steps.render_deploy.outputs.deploy_status || 'skipped' }}" >> "$GITHUB_STEP_SUMMARY"
+            echo "**Message:** ${{ steps.render_deploy.outputs.deploy_message || 'No deployment attempted' }}" >> "$GITHUB_STEP_SUMMARY"
 
             if [ -n "${{ steps.render_deploy.outputs.deploy_id }}" ]; then
               echo "**Deploy ID:** \`${{ steps.render_deploy.outputs.deploy_id }}\`" >> "$GITHUB_STEP_SUMMARY"
@@ -197,14 +169,5 @@ EOF
 
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "### Configuration" >> "$GITHUB_STEP_SUMMARY"
-          if [ -n "${{ secrets.RENDER_API_KEY }}" ]; then
-            echo "- RENDER_API_KEY: ✅ Set" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "- RENDER_API_KEY: ❌ Not set" >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-          if [ -n "${{ secrets.RENDER_SERVICE_ID }}" ]; then
-            echo "- RENDER_SERVICE_ID: ✅ Set" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "- RENDER_SERVICE_ID: ❌ Not set" >> "$GITHUB_STEP_SUMMARY"
-          fi
+          echo "- RENDER_API_KEY: ${{ secrets.RENDER_API_KEY && '✅ Set' || '❌ Not set' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID && '✅ Set' || '❌ Not set' }}" >> "$GITHUB_STEP_SUMMARY"
