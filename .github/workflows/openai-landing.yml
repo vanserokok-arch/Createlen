@@ -136,36 +136,36 @@ Files:
           echo "✅ Изменения запушены в ветку copilot/landing-autogen"
 
       - name: Summary
-        if: always()
+        if: ${{ always() }}
         run: |
-          echo "## Итоги генерации" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Итоги генерации" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ -f landing/index.html ]; then
-            echo "🟢 HTML создан ($(wc -l < landing/index.html) строк)" >> "$GITHUB_STEP_SUMMARY"
+            echo "🟢 HTML создан ($(wc -l < landing/index.html) строк)" >> $GITHUB_STEP_SUMMARY
           else
-            echo "🔴 HTML не создан" >> "$GITHUB_STEP_SUMMARY"
+            echo "🔴 HTML не создан" >> $GITHUB_STEP_SUMMARY
           fi
 
           if [ -f landing/styles.css ]; then
-            echo "🟢 CSS создан ($(wc -l < landing/styles.css) строк)" >> "$GITHUB_STEP_SUMMARY"
+            echo "🟢 CSS создан ($(wc -l < landing/styles.css) строк)" >> $GITHUB_STEP_SUMMARY
           else
-            echo "🔴 CSS не создан" >> "$GITHUB_STEP_SUMMARY"
+            echo "🔴 CSS не создан" >> $GITHUB_STEP_SUMMARY
           fi
 
           if [ -f landing/script.js ]; then
-            echo "🟢 JavaScript создан ($(wc -l < landing/script.js) строк)" >> "$GITHUB_STEP_SUMMARY"
+            echo "🟢 JavaScript создан ($(wc -l < landing/script.js) строк)" >> $GITHUB_STEP_SUMMARY
           else
-            echo "🔴 JavaScript не создан" >> "$GITHUB_STEP_SUMMARY"
+            echo "🔴 JavaScript не создан" >> $GITHUB_STEP_SUMMARY
           fi
 
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "### Ветка \`copilot/landing-autogen\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Ветка \`copilot/landing-autogen\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ -f landing/BUILD_LOG.md ]; then
-            echo "### Build Log" >> "$GITHUB_STEP_SUMMARY"
-            echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
-            tail -n 20 landing/BUILD_LOG.md >> "$GITHUB_STEP_SUMMARY"
-            echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "### Build Log" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            tail -n 20 landing/BUILD_LOG.md >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           fi
