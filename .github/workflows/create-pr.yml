@@ -1,0 +1,296 @@
+name: Create chore/add-webhook-deploy PR
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install helpers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Create branch, files, commit & push
+        env:
+          REPO: ${{ github.repository }}
+          PAT: ${{ secrets.AUTOMATION_PAT }}
+        run: |
+          set -euo pipefail
+          BRANCH="chore/add-webhook-deploy"
+          git config user.name "automation-bot"
+          git config user.email "actions@createlen"
+          # create or switch to branch
+          if git rev-parse --verify origin/$BRANCH >/dev/null 2>&1; then
+            git checkout -B $BRANCH origin/$BRANCH
+          else
+            git checkout -b $BRANCH
+          fi
+
+          mkdir -p webhook deploy etc/createlen .github/workflows
+
+          cat > webhook/webhook-handler.js <<'EOF'
+// Minimal GitHub webhook listener for Createlen
+// Usage: set WEBHOOK_SECRET in environment (or via /etc/createlen/.env when running as service)
+// npm i express
+const express = require('express');
+const crypto = require('crypto');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || '';
+
+app.use(express.json({
+  verify: (req, res, buf) => { req.rawBody = buf; }
+}));
+
+function verifySignature(req) {
+  const sig = req.get('x-hub-signature-256') || '';
+  if (!sig || !WEBHOOK_SECRET) return false;
+  const hmac = crypto.createHmac('sha256', WEBHOOK_SECRET);
+  hmac.update(req.rawBody);
+  const digest = 'sha256=' + hmac.digest('hex');
+  try { return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(sig)); } catch (e) { return false; }
+}
+
+app.post('/webhook', (req, res) => {
+  if (!verifySignature(req)) {
+    console.warn('Invalid webhook signature');
+    return res.status(401).send('invalid signature');
+  }
+
+  const event = req.get('x-github-event');
+  const delivery = req.get('x-github-delivery');
+  console.log(new Date().toISOString(), 'event=', event, 'delivery=', delivery);
+
+  // Quick 200 back to GitHub
+  res.status(200).send('ok');
+
+  // Async handling placeholder
+  if (event === 'push') {
+    console.log('Push to', req.body.repository && req.body.repository.full_name);
+  } else if (event === 'pull_request') {
+    console.log('PR', req.body.action, req.body.pull_request && req.body.pull_request.number);
+  } else if (event === 'installation') {
+    console.log('Installation', req.body.action, req.body.installation && req.body.installation.id);
+  } else {
+    console.log('Unhandled event', event);
+  }
+});
+
+app.get('/health', (req, res) => res.status(200).send('ok'));
+
+app.listen(PORT, () => console.log(`Webhook listener started on port ${PORT}`));
+EOF
+
+          cat > deploy/deploy.sh <<'EOF'
+#!/usr/bin/env bash
+# Idempotent deploy helper for Ubuntu/Debian (run as root)
+set -euo pipefail
+
+DOMAIN="createlen.kg-keis.ru"
+APP_DIR="/opt/createlen"
+ENV_FILE="/etc/createlen/.env"
+
+echo "1) Update and install prerequisites..."
+apt update && apt upgrade -y
+apt install -y curl gnupg2 ca-certificates lsb-release build-essential
+
+echo "2) Install Node.js 20"
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt install -y nodejs nginx certbot python3-certbot-nginx
+
+echo "3) Create app directories"
+mkdir -p "${APP_DIR}"
+chown -R www-data:www-data "${APP_DIR}"
+mkdir -p /etc/createlen
+chmod 750 /etc/createlen
+
+echo "4) Expect webhook-handler.js to be placed in ${APP_DIR} (copy from repo)"
+# If not present: you can scp it manually or clone the repo to /opt/createlen
+
+cd "${APP_DIR}"
+if [ ! -f package.json ]; then
+  sudo -u www-data npm init -y >/dev/null 2>&1 || true
+fi
+sudo -u www-data npm install express --no-audit --no-fund
+
+echo "5) Install systemd unit and nginx config (placeholders - copy from repo)"
+# Copy deploy/createlen-webhook.service to /etc/systemd/system/createlen-webhook.service
+# Copy deploy/nginx.createlen.conf to /etc/nginx/sites-available/createlen and symlink to sites-enabled
+
+echo "6) Test nginx and reload"
+nginx -t && systemctl reload nginx || true
+
+echo "7) Obtain TLS certificate (ensure DNS points to this server)"
+certbot --nginx -d "${DOMAIN}" --non-interactive --agree-tos -m admin@${DOMAIN} || true
+
+echo "8) Enable and start service (ensure /etc/createlen/.env exists with WEBHOOK_SECRET)"
+systemctl daemon-reload
+systemctl enable --now createlen-webhook || true
+
+echo "Done. Check logs: sudo journalctl -u createlen-webhook -f"
+EOF
+          chmod +x deploy/deploy.sh
+
+          cat > deploy/nginx.createlen.conf <<'EOF'
+server {
+    listen 80;
+    server_name createlen.kg-keis.ru;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name createlen.kg-keis.ru;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    client_max_body_size 8M;
+
+    location /webhook {
+        proxy_pass http://127.0.0.1:3000/webhook;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+    }
+
+    location /health {
+        proxy_pass http://127.0.0.1:3000/health;
+    }
+
+    location / {
+        return 404;
+    }
+}
+EOF
+
+          cat > deploy/createlen-webhook.service <<'EOF'
+[Unit]
+Description=Createlen webhook listener
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/createlen
+EnvironmentFile=/etc/createlen/.env
+ExecStart=/usr/bin/node /opt/createlen/webhook-handler.js
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+          cat > .github/workflows/ci.yml <<'EOF'
+name: CI / Test webhook handler
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm ci || npm install
+      - name: Lint (optional)
+        run: |
+          if [ -f package.json ]; then
+            if jq -e '.scripts.lint' package.json >/dev/null 2>&1; then
+              npm run lint || true
+            fi
+          fi
+      - name: Run tests (if any)
+        run: |
+          if jq -e '.scripts.test' package.json >/dev/null 2>&1; then
+            npm test
+          fi
+EOF
+
+          cat > etc/createlen/.env.example <<'EOF'
+# Copy to /etc/createlen/.env and set permissions: chmod 600
+PORT=3000
+WEBHOOK_SECRET=REPLACE_WITH_GENERATED_SECRET
+GH_APP_ID=
+GH_PRIVATE_KEY_PATH=/etc/createlen/private-key.pem
+GH_INSTALLATION_ID=
+EOF
+
+          cat > README.md <<'EOF'
+# Createlen — webhook listener & deploy helpers
+
+This repo contains a minimal webhook listener for a GitHub App and deployment helpers.
+
+Quick deployment summary:
+1. DNS: create A record `createlen.kg-keis.ru` -> 94.241.141.3
+2. On server:
+   - Copy `webhook/webhook-handler.js` to `/opt/createlen/`
+   - Copy `deploy/createlen-webhook.service` to `/etc/systemd/system/`
+   - Copy `deploy/nginx.createlen.conf` to `/etc/nginx/sites-available/createlen` and symlink to sites-enabled
+   - Create `/etc/createlen/.env` from `etc/createlen/.env.example` and set `WEBHOOK_SECRET` (generate below)
+   - Run `deploy/deploy.sh` as root (or run steps manually)
+   - Start service: `systemctl daemon-reload && systemctl enable --now createlen-webhook`
+   - Check logs: `sudo journalctl -u createlen-webhook -f`
+   - Health: `curl -I https://createlen.kg-keis.ru/health`
+
+Generate webhook secret:
+\`\`\`bash
+openssl rand -hex 32
+\`\`\`
+Place the generated hex string as WEBHOOK_SECRET in \`/etc/createlen/.env\` and also set it in GitHub / repository secrets (WEBHOOK_SECRET) or GitHub App webhook Secret.
+
+GitHub App configuration:
+- Webhook URL: \`https://createlen.kg-keis.ru/webhook\`
+- Enable SSL verification
+- Permissions (recommended): metadata: read, contents: read/write, pull_requests: read/write, checks: read/write, statuses: read/write, actions: read/write (optional)
+- Subscribe to events: push, pull_request, installation, check_run, check_suite, workflow_run, issue_comment
+
+Security:
+- DO NOT commit private keys or secrets to the repository.
+- Store GH app private key and other secrets in a secure vault or on the server with strict perms (chmod 600).
+- After automation completes, rotate PAT and other temporary tokens.
+
+Next steps:
+- Commit these files to branch \`chore/add-webhook-deploy\` and open a PR to \`main\`.
+- After PR is merged or files deployed, update GitHub App webhook URL and secret, then click "Send test webhook" to verify.
+EOF
+
+          git add .
+          git commit -m "chore: add webhook listener, deploy helpers, nginx and systemd configs, CI workflow" || echo "no changes to commit"
+          # push using PAT
+          git remote set-url origin "https://${PAT}@github.com/${REPO}.git"
+          git push -u origin $BRANCH --force
+
+      - name: Create PR via API
+        env:
+          PAT: ${{ secrets.AUTOMATION_PAT }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          body='{"title":"chore: add webhook listener, deploy helpers, nginx and systemd configs, CI workflow","head":"chore/add-webhook-deploy","base":"main","body":"Adds webhook listener and deploy helpers. See README for instructions."}'
+          resp=$(curl -s -X POST -H "Authorization: token ${PAT}" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${REPO}/pulls" -d "${body}")
+          echo "$resp" | jq -r '.html_url // .message'
