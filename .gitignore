@@ -1,4 +1,6 @@
 .DS_Store
-.DS_Store
 .env
-.env
+node_modules/
+*.log
+.openai_key
+secrets.json

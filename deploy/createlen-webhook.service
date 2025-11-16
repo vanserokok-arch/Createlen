@@ -1,0 +1,25 @@
+[Unit]
+Description=Createlen Webhook Handler
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/createlen
+EnvironmentFile=/etc/createlen/.env
+ExecStart=/usr/bin/node /opt/createlen/webhook/webhook-handler.js
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=createlen-webhook
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/createlen
+
+[Install]
+WantedBy=multi-user.target
