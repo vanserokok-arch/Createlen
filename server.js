@@ -1,6 +1,4 @@
-// server.js — минимальный сервер для Replit
-// Устанавливаем зависимости: express node-fetch archiver dotenv
-// Secrets in Replit: OPENAI_KEY, ALLOWED_TOKEN
+// server.js — improved: robust token handling, OpenAI error checks, safer JSON parsing
 import express from "express";
 import fetch from "node-fetch";
 import archiver from "archiver";
@@ -16,19 +14,35 @@ if (!OPENAI_KEY) console.warn("WARNING: OPENAI_KEY not set in env/replit secrets
 
 const inMemoryStore = {}; // { sessionId: { data: JSON } }
 
-// Helper: validate token (simple)
+// Helper: extract token from multiple places
+function getTokenFromReq(req) {
+  const bodyToken = req.body && req.body.token;
+  const queryToken = req.query && req.query.token;
+  const headerToken = req.headers['x-widget-token'] || req.headers['x_widget_token'] || req.headers['xwidgettoken'];
+  const auth = req.headers['authorization'] || req.headers['Authorization'] || req.headers['Authorization'.toLowerCase()];
+  if (auth && typeof auth === 'string' && auth.toLowerCase().startsWith('bearer ')) {
+    return auth.slice(7).trim();
+  }
+  return bodyToken || queryToken || headerToken || "";
+}
+
 function checkToken(req) {
-  // token can be provided in body or query (for export)
-  const t = (req.body && req.body.token) || req.query.token || "";
-  return !ALLOWED_TOKEN || t === ALLOWED_TOKEN;
+  const token = getTokenFromReq(req);
+  // If ALLOWED_TOKEN is empty -> allow (legacy); otherwise require match
+  return !ALLOWED_TOKEN || token === ALLOWED_TOKEN;
 }
 
 // POST /generate -> calls OpenAI and stores result in memory
 app.post("/generate", async (req, res) => {
   try {
     if (!checkToken(req)) return res.status(401).json({ error: "Unauthorized: invalid token" });
+
     const { brief = "", page_type = "invest", sessionId = "session-1" } = req.body;
     if (!brief) return res.status(400).json({ error: "Empty brief" });
+
+    if (!OPENAI_KEY) {
+      return res.status(500).json({ error: "Server misconfigured: OPENAI_KEY not set" });
+    }
 
     // Build prompt: instruct to respond with strict JSON
     const userPrompt = `
@@ -55,7 +69,7 @@ Do not output anything except the JSON object.
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini", // replace if needed
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: "You output only JSON object, no extra commentary." },
           { role: "user", content: userPrompt },
@@ -65,19 +79,32 @@ Do not output anything except the JSON object.
       }),
     });
 
-    const j = await resp.json().catch(() => null);
-    const text = j?.choices?.[0]?.message?.content || j?.choices?.[0]?.text || "";
+    // If OpenAI returned non-2xx -> surface the error
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => `status ${resp.status}`);
+      console.error("OpenAI error:", resp.status, errText);
+      return res.status(502).json({ error: "OpenAI error", status: resp.status, details: errText });
+    }
 
-    // Try parse strict JSON; if fail, try to extract JSON block
+    // Parse response JSON safely
+    const j = await resp.json().catch(() => null);
+    const text = j?.choices?.[0]?.message?.content || j?.choices?.[0]?.text || (typeof j === 'string' ? j : "");
     let out = null;
-    try { out = JSON.parse(text); } catch (e) {
-      const m = text.match(/\{[\s\S]*\}$/);
-      if (m) {
-        try { out = JSON.parse(m[0]); } catch (e2) { out = null; }
+
+    if (text) {
+      try {
+        out = JSON.parse(text);
+      } catch (e) {
+        // try to extract last JSON block
+        const m = text.match(/\{[\s\S]*\}$/);
+        if (m) {
+          try { out = JSON.parse(m[0]); } catch (e2) { out = null; }
+        }
       }
     }
 
     if (!out) {
+      console.error("LLM output not JSON. Raw:", text);
       return res.status(500).json({ error: "LLM returned non-JSON", raw: text });
     }
 
@@ -86,27 +113,32 @@ Do not output anything except the JSON object.
     return res.json(out);
   } catch (err) {
     console.error("Generate error:", err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message || String(err) });
   }
 });
 
 // GET /export?sessionId=... -> returns ZIP (landing.html + landing.json)
 app.get("/export", async (req, res) => {
-  if (!checkToken(req)) return res.status(401).json({ error: "Unauthorized" });
-  const sessionId = req.query.sessionId || "session-1";
-  const item = inMemoryStore[sessionId];
-  if (!item || !item.data) return res.status(404).json({ error: "No generated result for session" });
+  try {
+    if (!checkToken(req)) return res.status(401).json({ error: "Unauthorized" });
+    const sessionId = req.query.sessionId || "session-1";
+    const item = inMemoryStore[sessionId];
+    if (!item || !item.data) return res.status(404).json({ error: "No generated result for session" });
 
-  const data = item.data;
+    const data = item.data;
 
-  res.setHeader("Content-Type", "application/zip");
-  res.setHeader("Content-Disposition", `attachment; filename="landing-${sessionId}.zip"`);
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", `attachment; filename="landing-${sessionId}.zip"`);
 
-  const archive = archiver("zip", { zlib: { level: 9 } });
-  archive.pipe(res);
+    const archive = archiver("zip", { zlib: { level: 9 } });
+    archive.on('error', (err) => {
+      console.error('Archive error:', err);
+      try { res.status(500).end(); } catch(e){}
+    });
+    archive.pipe(res);
 
-  // Create minimal landing.html suitable for Tilda HTML-block
-  const html = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml((data.seo && data.seo.title) || "Landing")}</title><meta name="description" content="${escapeHtml((data.seo && data.seo.description) || "")}"></head><body>
+    // Create minimal landing.html suitable for Tilda HTML-block
+    const html = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml((data.seo && data.seo.title) || "Landing")}</title><meta name="description" content="${escapeHtml((data.seo && data.seo.description) || "")}"></head><body>
   <section style="padding:28px;background:#fff;">
     <h1>${escapeHtml(data.hero?.title || "")}</h1>
     <p>${escapeHtml(data.hero?.subtitle || "")}</p>
@@ -116,10 +148,14 @@ app.get("/export", async (req, res) => {
   ${(Array.isArray(data.faq) ? '<section><h2>FAQ</h2>' + data.faq.map(q=>`<details><summary>${escapeHtml(q.q)}</summary><div>${escapeHtml(q.a)}</div></details>`).join('') + '</section>' : '')}
   </body></html>`;
 
-  archive.append(html, { name: "landing.html" });
-  archive.append(JSON.stringify(data, null, 2), { name: "landing.json" });
+    archive.append(html, { name: "landing.html" });
+    archive.append(JSON.stringify(data, null, 2), { name: "landing.json" });
 
-  archive.finalize();
+    await archive.finalize();
+  } catch (err) {
+    console.error("Export error:", err);
+    return res.status(500).json({ error: err.message || String(err) });
+  }
 });
 
 function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
