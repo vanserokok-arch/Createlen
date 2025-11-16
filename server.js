@@ -1,18 +1,32 @@
 // server.js — минимальный сервер для Replit
 // Устанавливаем зависимости: express node-fetch archiver dotenv
 // Secrets in Replit: OPENAI_KEY, ALLOWED_TOKEN
+import 'dotenv/config';
 import express from "express";
+import path from 'path';
+import { fileURLToPath } from 'url';
 import fetch from "node-fetch";
 import archiver from "archiver";
-import dotenv from "dotenv";
-dotenv.config();
+import openaiRouter from './src/routes/openai.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(express.json({ limit: "200kb" }));
+app.use(express.json({ limit: "1mb" }));
+
+// Static files
+app.use(express.static(path.join(__dirname)));
 
 const OPENAI_KEY = process.env.OPENAI_KEY;
 const ALLOWED_TOKEN = process.env.ALLOWED_TOKEN || "";
 if (!OPENAI_KEY) console.warn("WARNING: OPENAI_KEY not set in env/replit secrets.");
+
+// Mount new OpenAI API routes
+app.use('/api', openaiRouter);
+
+// Health check endpoint
+app.get('/health', (req, res) => res.json({ ok: true }));
 
 const inMemoryStore = {}; // { sessionId: { data: JSON } }
 
@@ -126,3 +140,5 @@ function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+
+export default app;
