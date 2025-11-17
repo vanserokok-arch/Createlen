@@ -13,7 +13,7 @@ const __dirname = new URL(".", import.meta.url).pathname;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Подключаем статику public
+
 app.use(express.static(path.join(__dirname, "public")));
 
 // === СТАРЫЕ ЭНДПОИНТЫ (оставляем, чтобы ничего не сломать) ===
@@ -36,7 +36,7 @@ app.get("/health", (req, res) => {
 // Основной вебхук: сохраняем старое поведение, добавляем поддержку запросов с панели
 app.post("/webhook", async (req, res) => {
   try {
-    // Новый branch: запрос пришёл с дашборда
+
     if (req.body && req.body.source === "dashboard") {
       const page = req.body.page;
       const spec = req.body.spec;
@@ -46,12 +46,23 @@ app.post("/webhook", async (req, res) => {
         return res.status(400).json({ ok: false, message: "Empty spec in dashboard request" });
       }
 
+
       // Конфигурация из окружения
       const githubToken = process.env.GITHUB_WORKFLOW_TOKEN;
       const repoOwner = process.env.GITHUB_REPO_OWNER || "vanserokok-arch";
       const repoName = process.env.GITHUB_REPO_NAME || "Createlen";
       const workflowId = process.env.LANDING_WORKFLOW_ID || "openai-landing.yml";
       const ref = "main";
+
+
+
+      // Конфигурация из окружения
+      const githubToken = process.env.GITHUB_WORKFLOW_TOKEN;
+      const repoOwner = process.env.GITHUB_REPO_OWNER || "vanserokok-arch";
+      const repoName = process.env.GITHUB_REPO_NAME || "Createlen";
+      const workflowId = process.env.LANDING_WORKFLOW_ID || "openai-landing.yml";
+      const ref = "main";
+
 
       if (!githubToken) {
         console.error("GITHUB_WORKFLOW_TOKEN не настроен в окружении");
@@ -100,6 +111,7 @@ app.post("/webhook", async (req, res) => {
     // Если запрос НЕ от дашборда — оставляем прежнее поведение (для других интеграций)
     console.log("Webhook received (non-dashboard):", req.body);
     res.json({ ok: true });
+
   } catch (err) {
     console.error("Error in /webhook:", err);
     res.status(500).json({ ok: false, message: "Internal server error in /webhook" });
@@ -124,6 +136,32 @@ app.post("/panel/generate", async (req, res) => {
     const text = await localRes.text();
     res.status(localRes.status).send(text);
   } catch (err) {
+
+  } catch (err) {
+    console.error("Error in /webhook:", err);
+    res.status(500).json({ ok: false, message: "Internal server error in /webhook" });
+  }
+});
+
+// Маршрут отдачи панели (статический файл public/panel.html)
+app.get("/panel", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "panel.html"));
+});
+
+// Для совместимости оставляем /panel/generate (старый маршрут), проксируем в /webhook
+app.post("/panel/generate", async (req, res) => {
+  const body = Object.assign({}, req.body);
+  if (!body.source) body.source = "dashboard";
+  try {
+    const localRes = await fetch(`http://127.0.0.1:${PORT}/webhook`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const text = await localRes.text();
+    res.status(localRes.status).send(text);
+  } catch (err) {
+
     console.error("Error proxying /panel/generate -> /webhook:", err);
     res.status(500).send("Ошибка сервера при проксировании запроса.");
   }
