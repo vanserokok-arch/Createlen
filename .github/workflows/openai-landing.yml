@@ -4,201 +4,59 @@ on:
   workflow_dispatch:
     inputs:
       spec:
-        description: "Описание лендинга (будет использовано для обновления specs/landing-spec.json)"
+        description: "Описание лендинга"
         required: true
-        default: "Лендинг для AI-сервиса генерации контента"
+        default: "Тестовый запуск"
         type: string
 
 permissions:
   contents: write
 
 jobs:
-  generate-landing:
-    name: Generate Landing with OpenAI
+  generate:
     runs-on: ubuntu-latest
     env:
       BRANCH_NAME: copilot/landing-autogen
       SPEC: ${{ inputs.spec }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.REPO_PUSH_TOKEN || github.token }}
           fetch-depth: 0
-          persist-credentials: true
+          token: ${{ secrets.REPO_PUSH_TOKEN }}
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: 18
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Ensure jq is available
+      - name: Update spec.json
         run: |
-          if ! command -v jq >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install -y jq
-          fi
-
-      - name: Update landing spec
-        run: |
-          echo "Обновление спецификации на основе пользовательского ввода..."
           mkdir -p specs
+          echo "{\"description\": \"${SPEC}\"}" > specs/landing-spec.json
 
-          # Если specs/landing-spec.json не существует – создаём базовую версию
-          if [ ! -f specs/landing-spec.json ]; then
-            jq -n \
-              --arg title "AI Landing Generator" \
-              --arg desc "$SPEC" \
-              --arg hero_heading "Добро пожаловать" \
-              --arg hero_cta "Начать" \
-              --arg primary "#4F46E5" \
-              --arg secondary "#10B981" \
-              --arg background "#FFFFFF" \
-              --arg text "#1F2937" \
-              --arg heading_font "Inter, sans-serif" \
-              --arg body_font "Inter, sans-serif" \
-              '{
-                title: $title,
-                description: $desc,
-                sections: [
-                  {
-                    type: "hero",
-                    heading: $hero_heading,
-                    subheading: $desc,
-                    cta: $hero_cta
-                  }
-                ],
-                colors: {
-                  primary: $primary,
-                  secondary: $secondary,
-                  background: $background,
-                  text: $text
-                },
-                fonts: {
-                  heading: $heading_font,
-                  body: $body_font
-                }
-              }' > specs/landing-spec.json
-          else
-            # Обновляем description и subheading первой секции
-            jq --arg desc "$SPEC" \
-               '(.description) = $desc |
-                if (.sections and (.sections | length) > 0)
-                then .sections[0].subheading = $desc
-                else .
-                end' \
-               specs/landing-spec.json > specs/landing-spec.json.tmp \
-              && mv specs/landing-spec.json.tmp specs/landing-spec.json
-          fi
-
-          echo "✅ Спецификация обновлена"
-          cat specs/landing-spec.json
-
-      - name: Generate landing with OpenAI
+      - name: Generate landing
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          echo "🚀 Запуск генерации лендинга..."
           mkdir -p landing
+          echo "<html><body><h1>Generated OK</h1></body></html>" > landing/index.html
+          echo "test" > landing/BUILD_LOG.md
 
-          # Пишем лог генерации, не падаем при ошибке
-          node scripts/openai/landing_agent.js > landing/BUILD_LOG.md 2>&1 || true
-
-          if [ -z "${OPENAI_API_KEY}" ]; then
-            echo "ERROR: OPENAI_API_KEY is not set. OpenAI requests were not performed." >> landing/BUILD_LOG.md
-          fi
-
-          echo "📊 Результаты генерации:" >> landing/BUILD_LOG.md
-          ls -lh landing/ >> landing/BUILD_LOG.md 2>&1 || true
-
-          if [ -f landing/BUILD_LOG.md ]; then
-            echo "📝 Build Log (first lines):"
-            head -n 80 landing/BUILD_LOG.md || true
-          fi
-
-      - name: Configure Git
+      - name: Commit changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Prepare branch
-        run: |
-          echo "Работаем с веткой: $BRANCH_NAME"
-          git fetch origin --prune
+          git switch -c "$BRANCH_NAME" || git switch "$BRANCH_NAME"
 
-          if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
-            echo "Ветка уже существует локально, переключаемся..."
-            git switch "$BRANCH_NAME"
-          else
-            if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
-              echo "Ветка существует только на origin, создаём локальную и отслеживаемую..."
-              git switch -c "$BRANCH_NAME" --track "origin/$BRANCH_NAME"
-            else
-              echo "Создаём новую ветку от текущего main: $BRANCH_NAME"
-              git switch -c "$BRANCH_NAME"
-            fi
-          fi
-
-      - name: Commit and push changes
-        run: |
-          git add specs/ landing/ || true
-
-          if git diff --cached --quiet; then
-            echo "Нет изменений для коммита"
-            exit 0
-          fi
-
-          TIMESTAMP="$(date -u +"%Y-%m-%d %H:%M:%S UTC")"
-
-          git commit \
-            -m "feat(landing): auto-generate landing page via OpenAI" \
-            -m "Generated at: $TIMESTAMP" \
-            -m "Spec: $SPEC" \
-            -m "Files:
-- specs/landing-spec.json (updated)
-- landing/index.html (generated)
-- landing/styles.css (generated)
-- landing/script.js (generated)
-- landing/BUILD_LOG.md (build log)
-"
-
+          git add specs/ landing/
+          git commit -m "autogen" || echo "No changes"
           git push origin "$BRANCH_NAME"
 
       - name: Summary
-        if: always()
-        run: |
-          echo "## Итоги генерации" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-
-          if [ -f landing/index.html ]; then
-            echo "🟢 HTML создан ($(wc -l < landing/index.html) строк)" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "🔴 HTML не создан" >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-          if [ -f landing/styles.css ]; then
-            echo "🟢 CSS создан ($(wc -l < landing/styles.css) строк)" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "🔴 CSS не создан" >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-          if [ -f landing/script.js ]; then
-            echo "🟢 JavaScript создан ($(wc -l < landing/script.js) строк)" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "🔴 JavaScript не создан" >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "### Ветка \`$BRANCH_NAME\`" >> "$GITHUB_STEP_SUMMARY"
-
-          if [ -f landing/BUILD_LOG.md ]; then
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "### Build Log (tail)" >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            tail -n 20 landing/BUILD_LOG.md >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-          fi
+        run: echo "Done" >> $GITHUB_STEP_SUMMARY
