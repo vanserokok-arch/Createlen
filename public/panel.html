@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Createlen · Панель генерации лендингов</title>
+
+  <!-- Tailwind CDN (без сборки) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Небольшие кастомы для премиального вида */
+    body { background: #0b1220; }
+    .sidebar { min-width: 240px; max-width: 260px; }
+    .card { background: #0f1724; border: 1px solid #111827; }
+    .muted { color: #94a3b8; }
+    pre#log { background: #020617; border: 1px solid #111827; }
+    .active-tab { background: #0f1724; color: #fff; }
+  </style>
+</head>
+<body class="antialiased text-slate-100">
+  <div class="min-h-screen flex">
+    <!-- Sidebar -->
+    <aside class="sidebar p-6 bg-slate-950 border-r border-slate-800">
+      <div class="mb-8">
+        <h2 class="text-xl font-semibold">Createlen</h2>
+        <p class="text-sm muted mt-1">Панель генерации лендингов</p>
+      </div>
+
+      <nav class="space-y-2">
+        <button data-page="main" class="w-full text-left px-4 py-3 rounded-lg bg-slate-900 border border-slate-800 active-tab">Главная страница</button>
+        <button data-page="investment" class="w-full text-left px-4 py-3 rounded-lg bg-transparent border border-transparent hover:bg-slate-900">Инвестиционное мошенничество</button>
+        <button data-page="gosuslugi" class="w-full text-left px-4 py-3 rounded-lg bg-transparent border border-transparent hover:bg-slate-900">Взлом Госуслуг / банка</button>
+        <button data-page="influence" class="w-full text-left px-4 py-3 rounded-lg bg-transparent border border-transparent hover:bg-slate-900">Перевод под влиянием</button>
+      </nav>
+
+      <div class="mt-8 text-sm muted">
+        <div>Webhook: <span class="text-amber-300">/webhook</span></div>
+        <div class="mt-2">Branch: <span class="text-amber-300">copilot/landing-autogen</span></div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="flex-1 p-8">
+      <header class="mb-6 flex items-start justify-between">
+        <div>
+          <h1 id="pageTitle" class="text-2xl font-semibold">Главная страница КЕЙС</h1>
+          <p id="pageSubtitle" class="muted">Генерация лендинга: настрой промт и запусти workflow</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="badgePage" class="px-3 py-1 rounded-full border border-slate-800 text-xs bg-slate-900">MAIN</span>
+          <div class="text-sm muted">Webhook: <span class="text-amber-300">/webhook</span></div>
+        </div>
+      </header>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left: textarea -->
+        <section class="lg:col-span-2 card p-6 rounded-2xl">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-lg font-semibold">Промт для генерации</h3>
+              <p class="muted text-sm">Вставьте JSON-спеку/описание для OpenAI. Можно редактировать перед отправкой.</p>
+            </div>
+            <div>
+              <button id="btnInsertPreset" class="text-sm bg-amber-500 text-slate-900 px-3 py-1 rounded-lg">Вставить рекомендованный промт</button>
+            </div>
+          </div>
+
+          <textarea id="promptInput" spellcheck="false" class="w-full h-[420px] p-4 bg-slate-900 border border-slate-800 rounded-md font-mono text-sm whitespace-pre overflow-auto" placeholder='{"title":"...", "blocks":[...]}'></textarea>
+        </section>
+
+        <!-- Right: controls + logs -->
+        <aside class="space-y-6">
+          <div class="card p-4 rounded-2xl">
+            <h4 class="font-semibold">Запуск генерации лендинга</h4>
+            <p class="muted text-sm mt-2">Шаги:</p>
+            <ol class="muted text-sm list-decimal list-inside mt-2">
+              <li>Webhook принимает промт и тип страницы.</li>
+              <li>Запускается workflow openai-landing.yml.</li>
+              <li>Коммит в ветку copilot/landing-autogen и деплой на Render.</li>
+            </ol>
+
+            <div class="mt-4">
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <div class="text-xs muted">Тип страницы</div>
+                  <div id="controlBadge" class="inline-block px-2 py-1 rounded-md bg-slate-800 border border-slate-700 text-xs">MAIN</div>
+                </div>
+
+                <div class="flex gap-2">
+                  <button id="btnRun" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-900 rounded-lg font-semibold">🚀 Запустить генерацию</button>
+                  <button id="btnClearLog" class="px-3 py-2 bg-transparent border border-slate-800 rounded-md text-sm muted">Очистить лог</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card p-4 rounded-2xl">
+            <div class="flex items-center justify-between">
+              <h4 class="font-semibold">Статус</h4>
+              <div class="muted text-xs">live</div>
+            </div>
+            <pre id="log" class="mt-3 h-[220px] overflow-auto text-sm font-mono p-3 rounded-md"></pre>
+          </div>
+        </aside>
+      </div>
+
+      <!-- Footer -->
+      <footer class="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="text-sm muted">Createlen · Панель управления генерацией лендингов КЕЙС</div>
+        <div>
+          <span class="italic text-amber-300 text-xs px-3 py-1 rounded-full bg-slate-900 border border-slate-700">Булка-Юля, это создал твой Юрист</span>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- JSON presets moved out of main script to avoid syntax errors -->
+  <script type="application/json" id="preset-main">
+{
+  "project": "Главная страница юридической компании КЕЙС",
+  "brand": {
+    "name": "КЕЙС — Юридическая компания",
+    "font": "Roboto Slab",
+    "colors": {
+      "primary": "#0A2A43",
+      "secondary": "#0E3B5E",
+      "accent": "#D4AF37",
+      "background": "#F7F9FC",
+      "text_dark": "#1A1A1A",
+      "text_light": "#F6F6F6"
+    },
+    "logo": "use-provided-logo",
+    "style_notes": "Строгий, уверенный, премиальный стиль. Эстетика как у bhattlawgroup.com, а динамика и параллакс как у jamesonlawoffice.com."
+  },
+  "page": {
+    "route": "/",
+    "title": "КЕЙС — юридическая помощь пострадавшим от мошенничества",
+    "meta_description": "Юридическая компания КЕЙС помогает вернуть деньги при инвестиционном мошенничестве, взломе Госуслуг или мобильного банка и переводах под влиянием."
+  },
+  "layout": {
+    "hero": {
+      "title": "Защитим ваши права и вернём ваши деньги",
+      "subtitle": "Юридическая компания КЕЙС помогает людям вернуть потерянные деньги при любой форме мошенничества. Работаем ежедневно. Реальные кейсы, реальные возвраты.",
+      "cta_primary": "Получить консультацию",
+      "cta_secondary": "Узнать стоимость",
+      "background": "generate: dark_blue_gradient_with_light_parallax_particles",
+      "parallax": true
+    },
+    "advantages_section": {
+      "title": "Почему выбирают нас",
+      "items": [
+        {
+          "icon": "shield-check",
+          "title": "12+ лет опыта",
+          "text": "Мы успешно ведём дела по мошенничествам любой сложности: от инвестиционных схем до кредитов, оформленных мошенниками."
+        },
+        {
+          "icon": "scale",
+          "title": "Возвращаем деньги",
+          "text": "Наша команда ежедневно добивается возврата средств через банки, суды и силовые ведомства."
+        },
+        {
+          "icon": "clock-check",
+          "title": "Работаем быстро",
+          "text": "Первые действия уже в течение 1 часа после обращения. Время критически важно — мы знаем это."
+        }
+      ],
+      "background": "generate: soft_legal_texture_with_blur_and_light_lines",
+      "animated_cards": true
+    },
+    "fraud_types_section": {
+      "title": "Разбираем любые виды мошенничества",
+      "subtitle": "Мы работаем с тремя основными категориями, каждая с сотнями успешно решённых случаев.",
+      "cards": [
+        {
+          "title": "Инвестиционное мошенничество",
+          "text": "Ложные брокеры, криптоплатформы, псевдо-трейдинг, инвестиционные сайты",
+          "cta": "Подробнее",
+          "link": "/investment-fraud",
+          "background": "generate: modern-finance-dark-parallax"
+        },
+        {
+          "title": "Взлом Госуслуг / мобильного банка",
+          "text": "Оформленные на вас кредиты, переводы без вашего ведома",
+          "cta": "Подробнее",
+          "link": "/gosuslugi-hack",
+          "background": "generate: cyber-security-blue-glow"
+        },
+        {
+          "title": "Перевод под влиянием",
+          "text": "Телефонные мошенники, психологическое давление, угрозы, социальная инженерия",
+          "cta": "Подробнее",
+          "link": "/influence-fraud",
+          "background": "generate: psychological-pressure-dark-gold"
+        }
+      ],
+      "card_animations": "hover_fly_up + soft_glow",
+      "background": "generate: minimal_white_with_subtle_grid",
+      "parallax": false
+    },
+    "consult_form_block": {
+      "title": "Бесплатная консультация",
+      "subtitle": "Опишите ситуацию — мы скажем, что делать уже в первые 15 минут",
+      "fields": ["Имя", "Телефон", "Описание ситуации"],
+      "button": "Отправить",
+      "position": "hero-bottom-fixed-visible",
+      "background": "semi_transparent_dark_card"
+    },
+    "footer": {
+      "about": "Юридическая компания КЕЙС — помощь пострадавшим от мошенничества. Работаем по всей России.",
+      "contacts": {
+        "phone": "+7 (xxx) xxx-xx-xx",
+        "email": "info@keis.ru",
+        "address": "Санкт-Петербург, Россия"
+      },
+      "legal_links": ["Политика конфиденциальности", "Пользовательское соглашение"],
+      "background": "#0A2A43",
+      "text_color": "#FFFFFF"
+    }
+  },
+  "animations": {
+    "parallax": "enabled",
+    "scroll_reveal": "smooth_fade_up",
+    "hover_effects": "soft_shadow + glow",
+    "hero_logo_animation": "slow_glide_in",
+    "card_animation": "delayed_float"
+  },
+  "images": {
+    "style": "premium, dark-blue legal aesthetics",
+    "format": "webp",
+    "generate": {
+      "hero_background": "dark navy gradient with light-motion particles",
+      "fraud_cards": true,
+      "advantages_icons": true
+    }
+  },
+  "requirements": {
+    "responsive": true,
+    "fast_load": true,
+    "seo": true,
+    "font": "Roboto Slab",
+    "logo_visibility": "always_on_top",
+    "form_visible_on_entry": true
+  }
+}
+</script>
+
+  <script type="application/json" id="preset-investment">
+{
+  "project": "Лендинг — Инвестиционное мошенничество",
+  "brand": {
+    "name": "КЕЙС — защита от инвестиционного мошенничества",
+    "font": "Roboto Slab",
+    "colors": {
+      "primary": "#0A2A43",
+      "secondary": "#0E3B5E",
+      "accent": "#D4AF37",
+      "background": "#F7F9FC",
+      "text_dark": "#1A1A1A",
+      "text_light": "#F6F6F6"
+    },
+    "logo": "use-provided-logo",
+    "style_notes": "Премиальный строгий стиль, акценты как у bhattlawgroup.com, лёгкий параллакс как у jamesonlawoffice.com."
+  },
+  "page": {
+    "route": "/investment-fraud",
+    "title": "Вернём деньги из мошеннических инвестиций",
+    "meta_description": "Юридическая компания КЕЙС помогает вернуть деньги из фейковых брокеров, криптосхем и инвестиционных пирамид. Анализ, стратегия, сопровождение до результата."
+  },
+  "layout": {
+    "hero": {
+      "title": "Потеряли деньги в инвестициях? Это ещё не конец.",
+      "subtitle": "Ложные брокеры, криптосигналы, криптобиржи, псевдотрейдинг. Мы каждый день помогаем людям вернуть деньги из подобных схем.",
+      "bullets": [
+        "Разбираем схему и определяем, есть ли шанс на возврат",
+        "Формируем юридическую позицию и жалобы в банк, ЦБ, правоохранительные органы",
+        "Сопровождаем до реального результата, а не до первой отписки"
+      ],
+      "cta_primary": "Разобрать вашу ситуацию",
+      "cta_secondary": "Посмотреть реальные кейсы",
+      "background": "generate: dark_financial_city_night_with_glowing_lines",
+      "parallax": true,
+      "overlay_form": {
+        "title": "Бесплатный разбор инвестиционной схемы",
+        "fields": ["Имя", "Телефон", "Сумма потерь", "Кратко: что случилось"],
+        "button": "Получить разбор",
+        "always_visible": true
+      }
+    },
+    "pain_points": {
+      "title": "Как действует инвестиционное мошенничество",
+      "items": [
+        {
+          "title": "Красивый сайт и псевдоброкер",
+          "text": "Лицензия якобы от зарубежного регулятора, поддельные документы, \"доверительный управляющий\" и агрессивные менеджеры.",
+          "icon": "screen-search"
+        },
+        {
+          "title": "Манипуляции с \"доносами\" и \"просадками\"",
+          "text": "На экране показывают прибыль, а вывести деньги невозможно без нового пополнения, страховки или налога.",
+          "icon": "graph-fall"
+        },
+        {
+          "title": "Исчезновение связи",
+          "text": "После последнего крупного платежа счета блокируются, менеджеры пропадают, офисов не существует.",
+          "icon": "phone-off"
+        }
+      ],
+      "background": "generate: subtle_dark_grid_with_red_glow",
+      "animation": "fade-up"
+    },
+    "how_we_work": {
+      "title": "Как мы помогаем вернуть деньги",
+      "steps": [
+        {
+          "title": "Анализ схемы",
+          "text": "Собираем договоры, переписку, платёжные документы, определяем, через какие банки и платёжные системы ушли деньги.",
+          "badge": "1 шаг — до 24 часов"
+        },
+        {
+          "title": "Юридическая атака",
+          "text": "Готовим пакет жалоб в банки, платёжные агрегаторы, ЦБ, правоохранительные органы. Используем аргументы, на которые обязаны реагировать.",
+          "badge": "2 шаг — до 3 дней"
+        },
+        {
+          "title": "Сопровождение до результата",
+          "text": "Контролируем ответы, обжалуем отписки, при необходимости готовим иски. Ваша цель — реальный возврат, а не красивый отчёт.",
+          "badge": "3 шаг — до результата"
+        }
+      ],
+      "background": "generate: light_blue_to_white_gradient",
+      "timeline_style": "horizontal_with_icons"
+    },
+    "cases": {
+      "title": "Примеры реальных дел",
+      "subtitle": "Без указания персональных данных, только суть и результат.",
+      "cards": [
+        {
+          "label": "Криптоброкер",
+          "amount": "− 1 850 000 ₽",
+          "result": "Частичный возврат 1 200 000 ₽ через банк и платёжный сервис",
+          "duration": "Срок: 3,5 месяца"
+        },
+        {
+          "label": "Псевдотрейдинг",
+          "amount": "− 620 000 ₽",
+          "result": "Полный возврат через претензии и заявление в полицию",
+          "duration": "Срок: 2,5 месяца"
+        },
+        {
+          "label": "Инвест-платформа",
+          "amount": "− 3 400 000 ₽",
+          "result": "Дело в стадии исполнения: обеспечительные меры, арест счетов",
+          "duration": "Срок: идёт"
+        }
+      ],
+      "style": "cards_with_soft_parallax",
+      "background": "generate: muted_dark_with_spotlights"
+    },
+    "cta_bottom": {
+      "title": "Чем раньше начнёте — тем выше шанс вернуть деньги",
+      "subtitle": "Оставьте заявку сейчас, мы честно скажем, есть ли перспектива.",
+      "button": "Отправить ситуацию юристу",
+      "background": "generate: dark_blue_with_gold_accent"
+    }
+  },
+  "animations": {
+    "scroll_reveal": "fade-up",
+    "hover_cards": "soft_raise + shadow",
+    "cta_pulse": true
+  },
+  "requirements": {
+    "responsive": true,
+    "fast_load": true,
+    "use_logo": true,
+    "font": "Roboto Slab",
+    "form_visible_on_entry": true
+  }
+}
+</script>
+
+  <script type="application/json" id="preset-gosuslugi">
+{
+  "project": "Лендинг — Взлом Госуслуг / мобильного банка",
+  "brand": {
+    "name": "КЕЙС — защита при взломе Госуслуг и банков",
+    "font": "Roboto Slab",
+    "colors": {
+      "primary": "#0A1F33",
+      "secondary": "#102B46",
+      "accent": "#D9534F",
+      "background": "#F5F7FB",
+      "text_dark": "#191919",
+      "text_light": "#FDFDFD"
+    },
+    "logo": "use-provided-logo",
+    "style_notes": "Кибербезопасность + серьёзная юридическая помощь. Комбинация строгого синего и тревожного красного акцента."
+  },
+  "page": {
+    "route": "/gosuslugi-hack",
+    "title": "Взломали Госуслуги или мобильный банк и оформили кредиты?",
+    "meta_description": "Юридическая компания КЕЙС помогает оспорить кредиты и переводы, оформленные после взлома Госуслуг или мобильного банка. Быстрая реакция, чёткий план действий."
+  },
+  "layout": {
+    "hero": {
+      "title": "На вас оформили кредиты? Взломали Госуслуги или банк?",
+      "subtitle": "Мы помогаем людям, на которых мошенники повесили кредиты и сделали переводы без их согласия. Важно действовать быстро — мы знаем, что делать.",
+      "bullets": [
+        "Разбор ситуации в течение 1 часа",
+        "Подготовка заявлений в банк, МВД, прокуратуру",
+        "Помощь в приостановке взысканий и списаний"
+      ],
+      "cta_primary": "Мне оформили кредит",
+      "cta_secondary": "Консультация по телефону",
+      "background": "generate: cyber_security_lock_on_mobile_dark_blue_red",
+      "parallax": true,
+      "overlay_form": {
+        "title": "Срочная заявка юристу",
+        "fields": ["Имя", "Телефон", "Когда узнали о кредите?", "Банк"],
+        "button": "Отправить срочную заявку",
+        "always_visible": true
+      }
+    },
+    "warning_strip": {
+      "text": "⚠️ Чем быстрее вы обратитесь, тем выше шанс остановить списания и коллекоров.",
+      "background": "#D9534F",
+      "text_color": "#FFFFFF"
+    },
+    "scenario_section": {
+      "title": "Типичные сценарии взлома",
+      "cards": [
+        {
+          "title": "Взлом Госуслуг",
+          "text": "Через ваш аккаунт оформляют кредиты, подгружают фейковые справки и документы.",
+          "icon": "id-card-alert"
+        },
+        {
+          "title": "Взлом мобильного банка",
+          "text": "Смена номера телефона, подтверждение входа без вашего участия, массовые переводы.",
+          "icon": "mobile-off"
+        },
+        {
+          "title": "Комбо-схема",
+          "text": "Сначала звонок \"из банка\", потом ссылка, затем — взлом и кредиты на крупные суммы.",
+          "icon": "layers-alert"
+        }
+      ],
+      "background": "generate: dark_blue_with_matrix_style_lines",
+      "animation": "staggered_cards"
+    },
+    "how_we_protect": {
+      "title": "Как мы защищаем вас и оспариваем кредиты",
+      "steps": [
+        {
+          "title": "Фиксация факта мошенничества",
+          "text": "Помогаем корректно зафиксировать взлом: обращения, заявления, записи звонков, скриншоты.",
+          "icon": "document-search"
+        },
+        {
+          "title": "Работа с банком и бюро кредитных историй",
+          "text": "Оспариваем сделки, подаём заявления о мошенничестве, добиваемся приостановки взысканий.",
+          "icon": "bank"
+        },
+        {
+          "title": "Сопровождение до результата",
+          "text": "Контролируем ответы, при необходимости — подаём иски о признании договоров недействительными.",
+          "icon": "gavel"
+        }
+      ],
+      "background": "generate: light_clean_layout_with_subtle_shadows",
+      "timeline_style": "vertical_with_connecting_line"
+    },
+    "faq": {
+      "title": "Частые вопросы",
+      "items": [
+        {
+          "q": "Буду ли я обязан платить по кредитам, которые взяли мошенники?",
+          "a": "Зависит от доказательств и позиции банка. Ваша задача — правильно зафиксировать мошенничество и подать заявления. Наша — выстроить юридическую позицию и добиваться признания договоров недействительными."
+        },
+        {
+          "q": "Что делать, если уже звонят коллекторы?",
+          "a": "Не паниковать, не признавать долг, фиксировать звонки и обратиться к нам — мы поможем выстроить линию поведения и подготовим необходимые документы."
+        },
+        {
+          "q": "Есть ли сроки, после которых уже поздно что-то делать?",
+          "a": "Чем раньше — тем лучше. Но даже если прошло время, мы всё равно оцениваем перспективы и ищем решения."
+        }
+      ],
+      "style": "accordion",
+      "background": "generate: very_light_gray_with_soft_pattern"
+    },
+    "cta_bottom": {
+      "title": "Не оставайтесь один на один с проблемой",
+      "subtitle": "Опишите ситуацию, мы скажем, что можно сделать прямо сейчас.",
+      "button": "Отправить ситуацию юристу",
+      "background": "generate: dark_blue_with_red_accent"
+    }
+  },
+  "animations": {
+    "scroll_reveal": "fade-up",
+    "hover_cards": "border_glow",
+    "warning_strip_blink": true
+  },
+  "requirements": {
+    "responsive": true,
+    "font": "Roboto Slab",
+    "use_logo": true,
+    "form_visible_on_entry": true
+  }
+}
+</script>
+
+  <script type="application/json" id="preset-influence">
+{
+  "project": "Лендинг — Перевод под влиянием",
+  "brand": {
+    "name": "КЕЙС — защита при переводах под влиянием",
+    "font": "Roboto Slab",
+    "colors": {
+      "primary": "#111827",
+      "secondary": "#1F2937",
+      "accent": "#F59E0B",
+      "background": "#F9FAFB",
+      "text_dark": "#111827",
+      "text_light": "#F9FAFB"
+    },
+    "logo": "use-provided-logo",
+    "style_notes": "Эмоциональный, но сдержанный дизайн: сочетание тёмного фона и тёплых акцентов, подчёркивающих человеческую сторону истории."
+  },
+  "page": {
+    "route": "/influence-fraud",
+    "title": "Перевели деньги мошенникам под давлением или обманом?",
+    "meta_description": "КЕЙС помогает людям, которые перевели деньги мошенникам под влиянием угроз, давления и психологических манипуляций. Подготовка заявлений, сопровождение, возврат средств."
+  },
+  "layout": {
+    "hero": {
+      "title": "Перевели деньги “сотруднику банка”, “следователю” или “родственнику”?",
+      "subtitle": "Телефонные мошенники мастерски давят на страх, чувство вины и срочность. Но даже если перевод уже сделан, это не конец.",
+      "bullets": [
+        "Анализируем звонки, сообщения и переводы",
+        "Готовим заявления в банк и правоохранительные органы",
+        "Помогаем добиваться возврата и прекращения преследования по “долгу”"
+      ],
+      "cta_primary": "Мне звонили “из банка”",
+      "cta_secondary": "Рассказать свою историю",
+      "background": "generate: dark_blur_with_phone_and_warning_icons",
+      "parallax": true,
+      "overlay_form": {
+        "title": "Расскажите, как всё произошло",
+        "fields": ["Имя", "Телефон", "Сумма перевода", "Кратко: что говорили мошенники"],
+        "button": "Отправить историю юристу",
+        "always_visible": true
+      }
+    },
+    "emotion_block": {
+      "title": "Вы не виноваты в том, что вас обманули",
+      "text": "Эти схемы создают специалисты по психологии и манипуляциям. Они использовали страх за близких, угрозы и давление. Наша задача — вернуть контроль и деньги.",
+      "background": "generate: soft_dark_with_warm_light_spot",
+      "layout": "text_left_image_right"
+    },
+    "scheme_section": {
+      "title": "Как работает схема перевода под влиянием",
+      "steps": [
+        {
+          "title": "Звонок “из службы безопасности банка” или “от следователя”",
+          "text": "Создают иллюзию срочной угрозы: “с вашего счёта идут списания”, “на вас оформлен кредит”, “ваш родственник в беде”.",
+          "icon": "phone-warning"
+        },
+        {
+          "title": "Запрет обращаться в банк и к близким",
+          "text": "Требуют никому не говорить, оставаться на линии и “выполнять указания, иначе будет хуже”.",
+          "icon": "lock"
+        },
+        {
+          "title": "Переводы на “безопасные” счета",
+          "text": "Заставляют переводить деньги на чужие счета или снимать и отдавать “курьеру”.",
+          "icon": "cash-out"
+        }
+      ],
+      "background": "generate: dark_to_warm_gradient",
+      "animation": "step-by-step"
+    },
+    "our_help": {
+      "title": "Как мы помогаем в таких делах",
+      "cards": [
+        {
+          "title": "Фиксация мошенничества",
+          "text": "Сохраняем записи звонков, выписки, чеки, переписку. Помогаем оформить всё так, чтобы этим можно было пользоваться в деле.",
+          "icon": "file-badge"
+        },
+        {
+          "title": "Работа с банком",
+          "text": "Подаём квалифицированные заявления, добиваемся рассмотрения в рамках регламентов, а не стандартных отписок.",
+          "icon": "bank"
+        },
+        {
+          "title": "Правоохранительные органы",
+          "text": "Готовим заявления, сопровождаем на допросах, объясняем вашу позицию, чтобы вас не превращали в “соучастника”.",
+          "icon": "shield-user"
+        }
+      ],
+      "background": "generate: light_block_with_soft_cards",
+      "card_style": "floating_cards_with_hover_glow"
+    },
+    "stories": {
+      "title": "Истории клиентов (анонимно)",
+      "items": [
+        {
+          "label": "Звонили “из СБ банка”",
+          "text": "Женщина 55 лет, перевела 780 000 ₽ на “безопасный счёт”. Списания удалось остановить частично, банк вернул 430 000 ₽, остальное оспаривается.",
+          "tag": "Частичный возврат"
+        },
+        {
+          "label": "“Сын попал в ДТП”",
+          "text": "Мужчина 60 лет, снял и передал 350 000 ₽ курьеру. Мошенников не нашли, но удалось добиться списания долга по кредиту, через который были выведены деньги.",
+          "tag": "Списан кредит"
+        }
+      ],
+      "style": "cards_with_badges",
+      "background": "generate: warm_gray_with_subtle_texture"
+    },
+    "cta_bottom": {
+      "title": "Расскажите, как вас заставили перевести деньги",
+      "subtitle": "Мы поможем разобраться и вернуть контроль над ситуацией.",
+      "button": "Получить консультацию",
+      "background": "generate: dark_with_warm_accent"
+    }
+  },
+  "animations": {
+    "scroll_reveal": "fade-up",
+    "cards_hover": "lift_and_glow",
+    "cta_pulse": true
+  },
+  "requirements": {
+    "responsive": true,
+    "font": "Roboto Slab",
+    "use_logo": true,
+    "form_visible_on_entry": true
+  }
+}
+</script>
+
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // Метаданные страниц
+    const PAGE_META = {
+      main: { title: "Главная страница КЕЙС", subtitle: "Генерация лендинга: настрой промт и запусти workflow", label: "MAIN" },
+      investment: { title: "Инвестиционное мошенничество", subtitle: "Генерация посадочной страницы для инвестиционной темы", label: "INVESTMENT" },
+      gosuslugi: { title: "Взлом Госуслуг / банка", subtitle: "Генерация посадочной страницы для кейса взлома (демо)", label: "GOSUSLUGI" },
+      influence: { title: "Перевод под влиянием", subtitle: "Генерация посадочной страницы — перевод под влиянием", label: "INFLUENCE" }
+    };
+
+    // Лениво читаем пресет по нужной вкладке, чтобы не падать при отсутствии блока
+    function getPreset(page) {
+      const el = document.getElementById(`preset-${page}`);
+      return el ? el.textContent.trim() : "";
+    }
+
+    // State
+    let currentPage = "main";
+
+    // Elements
+    const sidebarButtons = document.querySelectorAll("aside nav button");
+    const pageTitleEl = document.getElementById("pageTitle");
+    const pageSubtitleEl = document.getElementById("pageSubtitle");
+    const badgePageEl = document.getElementById("badgePage");
+    const controlBadgeEl = document.getElementById("controlBadge");
+    const promptInput = document.getElementById("promptInput");
+    const btnInsertPreset = document.getElementById("btnInsertPreset");
+    const btnRun = document.getElementById("btnRun");
+    const btnClearLog = document.getElementById("btnClearLog");
+    const logEl = document.getElementById("log");
+
+    // Логирование с таймстампом
+    function timeNow() {
+      const d = new Date();
+      return d.toLocaleTimeString();
+    }
+    function appendLog(text) {
+      const line = `[${timeNow()}] ${text}\n`;
+      if (logEl) {
+        logEl.textContent += line;
+        logEl.scrollTop = logEl.scrollHeight;
+      } else {
+        console.log(line);
+      }
+    }
+
+    // Переключение вкладок (не затираем textarea при переключении)
+    function setActivePage(page) {
+      currentPage = page;
+
+      sidebarButtons.forEach(btn => {
+        if (btn.dataset.page === page) {
+          btn.classList.add("active-tab");
+          btn.classList.remove("bg-transparent");
+          btn.classList.add("bg-slate-900");
+        } else {
+          btn.classList.remove("active-tab");
+          btn.classList.remove("bg-slate-900");
+          btn.classList.add("bg-transparent");
+        }
+      });
+
+      const meta = PAGE_META[page] || PAGE_META.main;
+      if (pageTitleEl) pageTitleEl.textContent = meta.title;
+      if (pageSubtitleEl) pageSubtitleEl.textContent = meta.subtitle;
+      if (badgePageEl) badgePageEl.textContent = meta.label;
+      if (controlBadgeEl) controlBadgeEl.textContent = meta.label;
+
+      appendLog(`Переключено на вкладку "${page}"`);
+    }
+
+    // Обработчики для вкладок
+    sidebarButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const page = btn.dataset.page;
+        if (!page) return;
+        setActivePage(page);
+      });
+    });
+
+    // Вставить рекомендованный промт
+    if (btnInsertPreset) {
+      btnInsertPreset.addEventListener("click", () => {
+        const preset = getPreset(currentPage);
+        promptInput.value = preset || "";
+        appendLog(`Промт для "${currentPage}" заполнен из пресета.`);
+      });
+    }
+
+    // Очистить лог
+    if (btnClearLog) {
+      btnClearLog.addEventListener("click", () => {
+        if (logEl) {
+          logEl.textContent = "";
+        }
+        appendLog("Лог очищен.");
+      });
+    }
+
+    // Запустить генерацию: POST /webhook
+    if (btnRun) {
+      btnRun.addEventListener("click", async () => {
+        const spec = (promptInput.value || "").trim();
+        if (!spec) {
+          appendLog("Ошибка: поле промта пустое. Ничего не отправлено.");
+          return;
+        }
+
+        const payload = {
+          source: "dashboard",
+          page: currentPage,
+          spec
+        };
+
+        btnRun.disabled = true;
+        appendLog(`Отправка на /webhook (page=${currentPage})...`);
+
+        try {
+          const resp = await fetch("/webhook", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          const text = await resp.text();
+          if (resp.ok) {
+            appendLog(`Ответ сервера: ${resp.status} — ${text.slice(0, 400)}`);
+          } else {
+            appendLog(`Ошибка от сервера: ${resp.status} — ${text.slice(0, 400)}`);
+          }
+        } catch (err) {
+          appendLog(`Сетевая ошибка: ${err.message}`);
+          console.error(err);
+        } finally {
+          btnRun.disabled = false;
+        }
+      });
+    }
+
+    // Инициализация UI
+    setActivePage(currentPage);
+    appendLog("Панель инициализирована.");
+  });
+</script>
+</body>
+</html>
