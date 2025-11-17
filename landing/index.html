@@ -1,1 +1,1097 @@
-<html><body><h1>Generated OK</h1></body></html>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Createlen — лендинги для юристов и экспертов за минуты</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="description"
+    content="Createlen — сервис, который за несколько минут генерирует продающий лендинг для юриста или эксперта: строгий дизайн, юридически корректные тексты, форма заявок и сценарии записи на консультацию."
+  />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Createlen — лендинги для юристов и экспертов за минуты" />
+  <meta
+    property="og:description"
+    content="Получите готовый адаптивный лендинг с формой заявок и деловыми текстами без разработчика — уже через несколько минут."
+  />
+  <meta property="og:url" content="https://createlen-landing.onrender.com" />
+  <meta property="og:image" content="https://createlen-landing.onrender.com/og-placeholder.png" />
+
+  <!-- Schema.org -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ProfessionalService",
+      "name": "Createlen",
+      "description": "Сервис генерации лендингов для юристов, консультантов и экспертов.",
+      "url": "https://createlen-landing.onrender.com",
+      "areaServed": "RU",
+      "serviceType": "Создание лендингов для юридических и консалтинговых услуг"
+    }
+  </script>
+
+  <style>
+    :root {
+      --accent: #0b5fff;
+      --accent-soft: rgba(11, 95, 255, 0.08);
+      --bg: #ffffff;
+      --text: #1f2933;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --card-radius: 8px;
+      --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: 0.03em;
+    }
+
+    .logo span {
+      color: var(--accent);
+    }
+
+    .header-cta {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 10px 25px rgba(11, 95, 255, 0.35);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 30px rgba(11, 95, 255, 0.4);
+    }
+
+    .btn-outline {
+      border-color: var(--border);
+      background: #fff;
+      color: var(--text);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--accent);
+    }
+
+    main {
+      padding-bottom: 64px;
+    }
+
+    section {
+      padding: 56px 0;
+    }
+
+    section:nth-child(odd) {
+      background: #f8fafc;
+    }
+
+    .section-title {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .section-subtitle {
+      font-size: 15px;
+      color: var(--muted);
+      max-width: 560px;
+    }
+
+    /* Hero */
+    .hero {
+      padding: 64px 0 56px;
+      background: radial-gradient(circle at top left, var(--accent-soft), #ffffff 55%);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2.5fr);
+      gap: 32px;
+      align-items: flex-start;
+    }
+
+    .hero-eyebrow {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .hero-title {
+      font-size: clamp(28px, 4vw, 36px);
+      font-weight: 700;
+      margin: 0 0 12px;
+    }
+
+    .hero-subtitle {
+      font-size: 15px;
+      color: var(--muted);
+      margin-bottom: 20px;
+      max-width: 520px;
+    }
+
+    .hero-bullets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+
+    .hero-badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .hero-metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 12px;
+    }
+
+    .metric {
+      padding: 10px 14px;
+      border-radius: var(--card-radius);
+      border: 1px solid var(--border);
+      background: #fff;
+      min-width: 120px;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .metric-value {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .hero-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px 18px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+    }
+
+    .hero-card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 13px;
+    }
+
+    .field label {
+      color: var(--muted);
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      font: inherit;
+      outline: none;
+      transition: border-color 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .field textarea {
+      min-height: 60px;
+      resize: vertical;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(11, 95, 255, 0.3);
+    }
+
+    .form-hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .form-status {
+      font-size: 13px;
+      margin-top: 6px;
+      min-height: 18px;
+    }
+
+    .form-status.success {
+      color: #16a34a;
+    }
+
+    .form-status.error {
+      color: #dc2626;
+    }
+
+    /* Advantages */
+    .cards-grid {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: var(--card-radius);
+      padding: 16px 16px 18px;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    }
+
+    .card-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .card-text {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* Steps */
+    .steps-grid {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .step {
+      background: #fff;
+      border-radius: var(--card-radius);
+      padding: 16px 16px 18px;
+      border: 1px solid var(--border);
+    }
+
+    .step-number {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .mini-faq {
+      margin-top: 18px;
+      padding: 12px 14px;
+      border-radius: var(--card-radius);
+      background: #f1f5f9;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* Templates */
+    .templates-grid {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .template-card {
+      background: #fff;
+      border-radius: var(--card-radius);
+      padding: 14px 14px 16px;
+      border: 1px solid var(--border);
+    }
+
+    .template-preview {
+      height: 120px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, var(--accent-soft), #e2e8f0);
+      margin-bottom: 10px;
+    }
+
+    .template-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .template-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .template-result {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    /* Pricing */
+    .pricing-grid {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .pricing-card {
+      background: #fff;
+      border-radius: var(--card-radius);
+      padding: 16px 16px 18px;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .pricing-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .pricing-price {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .pricing-note {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .pricing-list {
+      margin: 8px 0;
+      padding-left: 18px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* Testimonials & FAQ */
+    .two-col-grid {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.2fr);
+      gap: 24px;
+    }
+
+    .testimonial {
+      background: #fff;
+      border-radius: var(--card-radius);
+      padding: 14px 16px 16px;
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .testimonial-name {
+      font-weight: 600;
+      color: var(--text);
+      margin-top: 6px;
+    }
+
+    .testimonial-role {
+      font-size: 12px;
+    }
+
+    .stats {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .guarantee {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: var(--card-radius);
+      background: #ecfdf3;
+      font-size: 13px;
+      border: 1px solid #bbf7d0;
+    }
+
+    .faq-item {
+      background: #fff;
+      border-radius: var(--card-radius);
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .faq-q {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .faq-a {
+      color: var(--muted);
+    }
+
+    /* Final CTA */
+    .cta-final-inner {
+      text-align: center;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    .cta-final-inner p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .cta-final-meta {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 18px 0 26px;
+      font-size: 12px;
+      color: var(--muted);
+      background: #0b1220;
+      color: #cbd5f5;
+    }
+
+    .footer-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 12px;
+    }
+
+    .footer-links a {
+      color: #e5e7eb;
+    }
+
+    .footer-meta {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    .socials {
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Responsive */
+    @media (max-width: 960px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-card {
+        max-width: 420px;
+        margin: 0 auto;
+      }
+
+      .cards-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .steps-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .templates-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .pricing-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .two-col-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .header-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .header-cta {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+
+      section {
+        padding: 40px 0;
+      }
+
+      .cards-grid,
+      .templates-grid,
+      .pricing-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-inner">
+      <div class="logo">Create<span>len</span></div>
+      <div class="header-cta">
+        <button class="btn btn-outline" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">
+          Как это работает
+        </button>
+        <button class="btn btn-primary" onclick="document.getElementById('lead-form').scrollIntoView({behavior:'smooth'})">
+          Создать лендинг
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <div class="hero-eyebrow">Лендинги для юридических услуг</div>
+          <h1 class="hero-title">Профессиональные лендинги для юристов и экспертов за минуты</h1>
+          <p class="hero-subtitle">
+            Createlen собирает для вас готовую HTML/CSS-страницу: строгий дизайн, юридически корректные тексты,
+            форма захвата лидов и сценарии записи на консультацию — без участия разработчика.
+          </p>
+
+          <div class="hero-bullets">
+            <span class="hero-badge">Готовый шаблон за ~10 минут</span>
+            <span class="hero-badge">Адаптивная верстка</span>
+            <span class="hero-badge">Фокус на доверии и конверсии</span>
+          </div>
+
+          <div class="hero-metrics">
+            <div class="metric">
+              <div class="metric-label">Готовых шаблонов</div>
+              <div class="metric-value">40+</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Юристов и экспертов</div>
+              <div class="metric-value">200+</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Средний рост заявок</div>
+              <div class="metric-value">+37%</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="hero-card" id="lead-form">
+            <div class="hero-card-title">Получите лендинг под ваши услуги</div>
+            <form id="landingForm">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="name">Ваше имя</label>
+                  <input id="name" name="name" placeholder="Например, Евгений Петров" required />
+                </div>
+                <div class="field">
+                  <label for="email">Email</label>
+                  <input id="email" name="email" type="email" placeholder="you@example.com" required />
+                </div>
+                <div class="field">
+                  <label for="phone">Телефон</label>
+                  <input id="phone" name="phone" placeholder="+7" />
+                </div>
+                <div class="field">
+                  <label for="type">Тип консультации</label>
+                  <select id="type" name="type" required>
+                    <option value="">Выберите нишу</option>
+                    <option>Семейное право</option>
+                    <option>Корпоративное право</option>
+                    <option>Налоговый консалтинг</option>
+                    <option>Миграционные вопросы</option>
+                    <option>Другая специализация</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="value">Кратко о ценности</label>
+                  <textarea
+                    id="value"
+                    name="value"
+                    placeholder="Чем вы помогаете клиентам и какую задачу закрываете?"
+                  ></textarea>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px">
+                Получить лендинг
+              </button>
+              <div class="form-hint">
+                Форма может быть подключена к email, Webhook или CRM. В продакшене отправку можно настроить через
+                сервер или сервис автоматизации.
+              </div>
+              <div id="formStatus" class="form-status"></div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADVANTAGES -->
+    <section id="advantages">
+      <div class="container">
+        <h2 class="section-title">Почему Createlen выгоднее классического сайта</h2>
+        <p class="section-subtitle">
+          Вместо долгого брифа, правок от дизайнера и ожидания разработчика — вы заполняете несколько полей и
+          получаете готовую страницу, заточенную под юридические услуги.
+        </p>
+
+        <div class="cards-grid">
+          <div class="card">
+            <div class="card-icon">⚡</div>
+            <div class="card-title">Быстро — за минуты</div>
+            <div class="card-text">
+              Заполните ключевые данные — и уже через несколько минут получите готовый адаптивный лендинг, который
+              можно сразу отправлять клиентам или запускать в рекламу.
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-icon">💻</div>
+            <div class="card-title">Без кода и разработчиков</div>
+            <div class="card-text">
+              Не нужно разбираться в верстке и хостинге. Createlen генерирует чистый HTML/CSS и подсказывает, как
+              опубликовать страницу на GitHub Pages или Netlify.
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-icon">⚖️</div>
+            <div class="card-title">Юридически корректные тексты</div>
+            <div class="card-text">
+              Структура и формулировки ориентированы на практику юристов: акцент на компетентность, ответственность и
+              корректное описание услуг без лишних обещаний.
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-icon">📈</div>
+            <div class="card-title">Фокус на конверсии</div>
+            <div class="card-text">
+              Понятные заголовки, видимая форма заявки и чёткие призывы к действию помогают превращать посещения в
+              реальные запросы на консультацию.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section id="how">
+      <div class="container">
+        <h2 class="section-title">Как работает Createlen</h2>
+        <p class="section-subtitle">
+          Полный путь — от короткого ТЗ до готового лендинга с формой записи и инструкцией по публикации.
+        </p>
+
+        <div class="steps-grid">
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="card-title">Вы заполняете простой бриф</div>
+            <div class="card-text">
+              Услуги, целевая аудитория, ключевая ценность, формат консультации, контакты. Можно загрузить короткий
+              документ или написать всё прямо в форме.
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="card-title">Искусственный интеллект собирает лендинг</div>
+            <div class="card-text">
+              AI подбирает структуру секций, пишет тексты в деловом тоне, формирует блоки преимуществ, вопросов,
+              кейсов и форм захвата лидов.
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">3</div>
+            <div class="card-title">Вы получаете ZIP и инструкции</div>
+            <div class="card-text">
+              Результат — архив с HTML/CSS/JS. В комплекте — инструкция по быстрой публикации на GitHub Pages или
+              Netlify и рекомендации по интеграции с CRM и Calendly.
+            </div>
+          </div>
+        </div>
+
+        <div class="mini-faq">
+          <strong>Частые вопросы:</strong> Генерация занимает от 5 до 10 минут. Все тексты можно отредактировать
+          вручную. По желанию лендинг можно доработать разработчиком или дизайнером — структура и верстка уже
+          подготовлены.
+        </div>
+      </div>
+    </section>
+
+    <!-- TEMPLATES -->
+    <section id="templates">
+      <div class="container">
+        <h2 class="section-title">Готовые шаблоны под разные ниши</h2>
+        <p class="section-subtitle">
+          Шаблоны адаптируются под вашу специализацию: меняются тексты, формулировки офферов, блоки доверия и
+          сценарии записи.
+        </p>
+
+        <div class="templates-grid">
+          <div class="template-card">
+            <div class="template-preview"></div>
+            <div class="template-meta">Семейное право • консультации онлайн</div>
+            <div class="template-title">Лендинг для семейного юриста</div>
+            <div class="template-result">+42% заявок с трафика из таргетированной рекламы за первый месяц.</div>
+            <button class="btn btn-outline" style="width: 100%">Посмотреть шаблон</button>
+          </div>
+          <div class="template-card">
+            <div class="template-preview"></div>
+            <div class="template-meta">Корпоративное право • сопровождение бизнеса</div>
+            <div class="template-title">Страница юридического сопровождения</div>
+            <div class="template-result">Больше качественных лидов от собственников и директоров малого бизнеса.</div>
+            <button class="btn btn-outline" style="width: 100%">Посмотреть шаблон</button>
+          </div>
+          <div class="template-card">
+            <div class="template-preview"></div>
+            <div class="template-meta">Налоговый консалтинг • B2B</div>
+            <div class="template-title">Лендинг налогового консультанта</div>
+            <div class="template-result">
+              Чёткий оффер и блок вопросов помогают отсеивать нецелевые обращения и фокусироваться на крупных клиентах.
+            </div>
+            <button class="btn btn-outline" style="width: 100%">Посмотреть шаблон</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRICING -->
+    <section id="pricing">
+      <div class="container">
+        <h2 class="section-title">Тарифы для юристов и экспертов</h2>
+        <p class="section-subtitle">
+          Выберите формат, который подходит под текущую стадию практики: от тестового запуска до полноценного
+          агентского сценария.
+        </p>
+
+        <div class="pricing-grid">
+          <div class="pricing-card">
+            <div class="pricing-label">Free Trial</div>
+            <div class="pricing-price">0 ₽</div>
+            <div class="pricing-note">1 лендинг для теста гипотезы.</div>
+            <ul class="pricing-list">
+              <li>Готовый HTML/CSS-шаблон</li>
+              <li>Форма заявок и базовый FAQ</li>
+              <li>Инструкция по публикации</li>
+            </ul>
+            <button class="btn btn-outline">Попробовать бесплатно</button>
+          </div>
+
+          <div class="pricing-card">
+            <div class="pricing-label">Старт</div>
+            <div class="pricing-price">4 900 ₽</div>
+            <div class="pricing-note">Для индивидуальных юристов и консультантов.</div>
+            <ul class="pricing-list">
+              <li>До 3 лендингов под разные услуги</li>
+              <li>Настройка формы под email/Webhook</li>
+              <li>Рекомендации по текстам и офферу</li>
+            </ul>
+            <button class="btn btn-primary">Выбрать «Старт»</button>
+          </div>
+
+          <div class="pricing-card">
+            <div class="pricing-label">Профи</div>
+            <div class="pricing-price">9 900 ₽</div>
+            <div class="pricing-note">Для практик с ровным потоком заявок.</div>
+            <ul class="pricing-list">
+              <li>До 8 лендингов и A/B-варианты</li>
+              <li>Интеграции с CRM и Calendly (через Webhook)</li>
+              <li>Базовая помощь с аналитикой</li>
+            </ul>
+            <button class="btn btn-outline">Запросить детали</button>
+          </div>
+
+          <div class="pricing-card">
+            <div class="pricing-label">Агентство</div>
+            <div class="pricing-price">По запросу</div>
+            <div class="pricing-note">Для агентств и объединений экспертов.</div>
+            <ul class="pricing-list">
+              <li>Неограниченное количество лендингов</li>
+              <li>Расширенные интеграции и поддержку</li>
+              <li>Приоритная очередь доработок</li>
+            </ul>
+            <button class="btn btn-outline">Обсудить проект</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TESTIMONIALS + FAQ -->
+    <section id="cases">
+      <div class="container">
+        <h2 class="section-title">Кейсы и ответы на вопросы</h2>
+        <p class="section-subtitle">
+          Createlen помогает не просто «сделать сайт», а выстроить понятный путь от первого визита до записи на
+          консультацию.
+        </p>
+
+        <div class="two-col-grid">
+          <div>
+            <div class="testimonial">
+              «Мы использовали Createlen для запуска консультаций по семейным спорам. За две недели получили столько
+              целевых заявок, сколько раньше приходило за месяц с общего сайта».
+              <div class="testimonial-name">Анна К., юрист по семейному праву</div>
+              <div class="testimonial-role">Частная практика, Москва</div>
+            </div>
+            <div class="testimonial">
+              «Было важно объяснить бизнесу, чем именно мы помогаем. Структура лендинга и блок вопросов закрывают
+              основные возражения ещё до первой встречи».
+              <div class="testimonial-name">Дмитрий В., налоговый консультант</div>
+              <div class="testimonial-role">Консалтинг для малого и среднего бизнеса</div>
+            </div>
+            <div class="stats">
+              <strong>Статистика клиентов Createlen:</strong> в среднем +25–40% к количеству заявок с того же трафика
+              за счёт понятных офферов и чётких сценариев записи.
+            </div>
+            <div class="guarantee">
+              <strong>Гарантия:</strong> в течение 7 дней после генерации вы можете запросить доработку структуры или
+              текста, либо вернуть деньги, если результат не подходит под вашу задачу.
+            </div>
+          </div>
+
+          <div>
+            <div class="faq-item">
+              <div class="faq-q">Нужны ли мне навыки верстки?</div>
+              <div class="faq-a">
+                Нет. Вы получаете уже готовый HTML/CSS-шаблон. Достаточно следовать инструкции по публикации или
+                передать лендинг вашему техспециалисту.
+              </div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-q">Можно ли подключить форму к CRM?</div>
+              <div class="faq-a">
+                Да. Форма поддерживает отправку данных на email или Webhook. Через эти точки можно связать лендинг с
+                популярными CRM и сервисами автоматизации.
+              </div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-q">Какие юридические шаблоны доступны?</div>
+              <div class="faq-a">
+                Семейное, корпоративное, налоговое право, миграция, банкротство, сопровождение сделок и другие
+                специализации. Структура гибко адаптируется под вашу нишу.
+              </div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-q">Как быстро я получу страницу?</div>
+              <div class="faq-a">
+                Обычно генерация занимает несколько минут после заполнения брифа. Дальше останется только опубликовать
+                лендинг и при необходимости внести точечные правки.
+              </div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-q">Можно ли изменить текст или дизайн?</div>
+              <div class="faq-a">
+                Да. Вы получаете исходный код и можете менять заголовки, цвета, блоки и структуру самостоятельно или с
+                помощью разработчика.
+              </div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-q">Кто отвечает за конфиденциальность данных?</div>
+              <div class="faq-a">
+                Createlen не требует отправки персональных данных клиентов. Интеграции с CRM и почтой настраиваются на
+                вашей стороне, вы полностью контролируете хранение информации.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FINAL CTA -->
+    <section id="cta-final">
+      <div class="container">
+        <div class="cta-final-inner">
+          <h2 class="section-title">Создайте лендинг, который работает как цифровой ассистент</h2>
+          <p>
+            Чётко объясните клиентам, чем вы занимаетесь, какие задачи решаете и как записаться на консультацию —
+            без сложных сайтов, рекламных текстов и долгих согласований.
+          </p>
+          <div style="margin-top: 18px">
+            <button
+              class="btn btn-primary"
+              onclick="document.getElementById('lead-form').scrollIntoView({behavior:'smooth'})"
+            >
+              Создать лендинг сейчас
+            </button>
+          </div>
+          <div class="cta-final-meta">
+            Готово за ~10 минут — без разработчика. Тексты в деловом тоне, структура под юридические услуги, акцент на
+            доверии и понятных шагах для клиента.
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <div class="footer-links">
+        <a href="#hero">Главная</a>
+        <a href="#pricing">Тарифы</a>
+        <a href="#cases">Кейсы</a>
+        <a href="#faq">FAQ</a>
+        <a href="#">Политика конфиденциальности</a>
+        <a href="#">Публичная оферта</a>
+      </div>
+      <div class="footer-meta">
+        <div>© Createlen, генератор лендингов для юристов и экспертов.</div>
+        <div class="socials">
+          <span>Telegram</span>
+          <span>LinkedIn</span>
+          <span>Instagram*</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Базовая имитация отправки формы.
+    // В продакшене сюда можно добавить отправку на email / Webhook / CRM.
+    const form = document.getElementById("landingForm");
+    const statusEl = document.getElementById("formStatus");
+
+    if (form) {
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        statusEl.textContent = "";
+
+        const formData = new FormData(form);
+        const name = formData.get("name");
+        const email = formData.get("email");
+
+        if (!name || !email) {
+          statusEl.textContent = "Пожалуйста, заполните обязательные поля.";
+          statusEl.className = "form-status error";
+          return;
+        }
+
+        // Здесь можно вызвать fetch('/webhook', { method: 'POST', body: JSON.stringify(... ) })
+        // или отправить данные в сторонний сервис.
+        setTimeout(() => {
+          statusEl.textContent =
+            "Заявка отправлена. Мы пришлём ссылку на сгенерированный лендинг и инструкцию по публикации.";
+          statusEl.className = "form-status success";
+          form.reset();
+        }, 500);
+      });
+    }
+  </script>
+</body>
+</html>
