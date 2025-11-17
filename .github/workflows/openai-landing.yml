@@ -14,26 +14,19 @@ permissions:
 
 jobs:
   generate-landing:
-    name: Generate landing with OpenAI and push to main
+    name: Generate Landing with OpenAI
     runs-on: ubuntu-latest
     env:
-      TARGET_BRANCH: main
+      BRANCH_NAME: copilot/landing-autogen
       SPEC: ${{ inputs.spec }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          token: ${{ secrets.REPO_PUSH_TOKEN || github.token }}
           fetch-depth: 0
           persist-credentials: true
-          token: ${{ secrets.REPO_PUSH_TOKEN }}
-
-      - name: Ensure we are on target branch
-        run: |
-          echo "Работаем с веткой: $TARGET_BRANCH"
-          git fetch origin --prune
-          git checkout "$TARGET_BRANCH"
-          git pull origin "$TARGET_BRANCH"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -55,6 +48,7 @@ jobs:
           echo "Обновление спецификации на основе пользовательского ввода..."
           mkdir -p specs
 
+          # Если specs/landing-spec.json не существует – создаём базовую версию
           if [ ! -f specs/landing-spec.json ]; then
             jq -n \
               --arg title "AI Landing Generator" \
@@ -90,6 +84,7 @@ jobs:
                 }
               }' > specs/landing-spec.json
           else
+            # Обновляем description и subheading первой секции
             jq --arg desc "$SPEC" \
                '(.description) = $desc |
                 if (.sections and (.sections | length) > 0)
@@ -109,6 +104,8 @@ jobs:
         run: |
           echo "🚀 Запуск генерации лендинга..."
           mkdir -p landing
+
+          # Пишем лог генерации, не падаем при ошибке
           node scripts/openai/landing_agent.js > landing/BUILD_LOG.md 2>&1 || true
 
           if [ -z "${OPENAI_API_KEY}" ]; then
@@ -128,6 +125,24 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Prepare branch
+        run: |
+          echo "Работаем с веткой: $BRANCH_NAME"
+          git fetch origin --prune
+
+          if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
+            echo "Ветка уже существует локально, переключаемся..."
+            git switch "$BRANCH_NAME"
+          else
+            if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
+              echo "Ветка существует только на origin, создаём локальную и отслеживаемую..."
+              git switch -c "$BRANCH_NAME" --track "origin/$BRANCH_NAME"
+            else
+              echo "Создаём новую ветку от текущего main: $BRANCH_NAME"
+              git switch -c "$BRANCH_NAME"
+            fi
+          fi
+
       - name: Commit and push changes
         run: |
           git add specs/ landing/ || true
@@ -139,27 +154,19 @@ jobs:
 
           TIMESTAMP="$(date -u +"%Y-%m-%d %H:%M:%S UTC")"
 
-          COMMIT_MSG=$(cat <<EOF
-feat(landing): auto-generate landing page via OpenAI
-
-Generated at: $TIMESTAMP
-Spec: $SPEC
-
-Files:
+          git commit \
+            -m "feat(landing): auto-generate landing page via OpenAI" \
+            -m "Generated at: $TIMESTAMP" \
+            -m "Spec: $SPEC" \
+            -m "Files:
 - specs/landing-spec.json (updated)
 - landing/index.html (generated)
 - landing/styles.css (generated)
 - landing/script.js (generated)
 - landing/BUILD_LOG.md (build log)
-EOF
-)
+"
 
-          echo "Создаём коммит:"
-          echo "$COMMIT_MSG"
-
-          git commit -m "$COMMIT_MSG"
-          git push origin "$TARGET_BRANCH"
-          echo "✅ Изменения запушены в ветку $TARGET_BRANCH"
+          git push origin "$BRANCH_NAME"
 
       - name: Summary
         if: always()
@@ -186,12 +193,12 @@ EOF
           fi
 
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "### Ветка \`$TARGET_BRANCH\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Ветка \`$BRANCH_NAME\`" >> "$GITHUB_STEP_SUMMARY"
 
           if [ -f landing/BUILD_LOG.md ]; then
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "### Build Log (tail)" >> "$GITHUB_STEP_SUMMARY"
-            echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
             tail -n 20 landing/BUILD_LOG.md >> "$GITHUB_STEP_SUMMARY"
-            echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
           fi
