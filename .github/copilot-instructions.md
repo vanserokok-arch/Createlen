@@ -1,70 +1,181 @@
-# Copilot repository instructions
+# Copilot Instructions for Createlen
 
-Repository: Createlen (landing generator & webhook handler)
+## Проект и цель
 
-## General rules
+Createlen — сервис генерации лендингов и сайтов на основе промтов (JSON-спек) через OpenAI и GitHub Actions.
 
-- You have full permission to:
-  - read and list files;
-  - create, delete and modify files;
-  - refactor code and project structure;
-  - create branches, commits and pushes;
-  - open Pull Requests.
-- Work **autonomously**. Do not ask the user for confirmation on each small step.
-- If you hit an error (TypeError, SyntaxError, build failure, CI failure, ESLint/Jest error, etc.) — **debug and fix it yourself**, then re-run.
-- Prefer small, focused commits, but it is OK to do a larger atomic change if it’s one feature.
-- Never commit directly to `main`. Always use a feature branch.
+Главная цель:  
+Собрать **профессиональную панель генерации** (`/panel`), которая:
 
-## Tools
+- Выглядит как дорогой современный веб-интерфейс (glassmorphism, плавные анимации, аккуратные шрифты).
+- Позволяет генерировать страницы по разным направлениям (инвестиционное мошенничество, взлом Госуслуг, переводы под влиянием и др.).
+- Со временем станет «центром управления» для создания целых сайтов и их продвижения.
 
-You are allowed to use all available tools, including but not limited to:
+Внизу панели ОБЯЗАТЕЛЬНА красивая подпись:  
+**by ZhenyaTyazh**
 
-- `read_file`, `list_files`
-- `apply_patch`, `create_file`, `delete_file`
-- `push_files`
-- `run`, `npm`, `node` (to run scripts / dev server / tests)
-- `create_pull_request`
+## Технологический стек (обязательный)
 
-If the UI asks whether to use `push_files` or similar tools, assume the user already agreed.
+- Node.js 18+
+- Express (server.js)
+- Статический фронтенд для `/panel`:
+  - HTML5
+  - TailwindCSS (через CDN, без сборки)
+  - Чистый JavaScript (без React/Vue, если в задаче не сказано иное)
+- GitHub Actions для генерации лендингов (workflow `openai-landing.yml`).
 
-## Branch & PR conventions
+Не добавляй тяжелые фреймворки (React, Next и т.д.) без явного запроса в задаче.
 
-- For your work, create branches with prefix `copilot/`, for example:
-  - `copilot/panel-integration`
-  - `copilot/panel-fixes`
-  - `copilot/openai-workflow`.
-- Commit messages: short, meaningful, in English, e.g.:
-  - `fix: landing generation panel tabs and presets`
-  - `feat: add openai landing github workflow`.
-- Always open a Pull Request into `main` when the task is complete and tests pass.
+## Общие правила работы Copilot
 
-## Project specifics
+1. **Работаешь автономно.**  
+   Не задаёшь уточняющих вопросов пользователю. Если чего-то не хватает — принимаешь самое разумное предположение и реализуешь.
 
-- Node.js project.
-- Default commands:
-  - Install deps: `npm ci`
-  - Start webhook handler: `npm start` (runs `node webhook/webhook-handler.js`)
-  - Start panel server (if `server.js` exists): `node server.js`
-- Panel for landing generation:
-  - HTML: `public/panel.html`
-  - Webhook endpoint: `POST /webhook`
-  - Panel route: `GET /panel`
-  - Panel must:
-    - switch tabs on the left sidebar (`data-page="main|investment|gosuslugi|influence"`);
-    - fill `<textarea id="promptInput">` with JSON preset when clicking
-      **“Вставить рекомендованный промт”**;
-    - send `POST /webhook` with JSON body `{ source: "dashboard", page, spec }`;
-    - show log messages in `<pre id="log">`;
-    - work without JavaScript syntax errors in the browser console.
+2. **Используешь инструменты GitHub Copilot Agents:**
+   - Для изменения файлов — `apply_patch` / аналогичный инструмент.
+   - Для запуска команд — `run` (например `npm ci`, `npm test`, `npm start`).
+   - Для сохранения файлов — `push_files`.
+   - Для создания PR — `create_pull_request`.
 
-## Quality requirements
+3. **Всегда тестируешь свои изменения:**
+   - `npm ci` (если не выполнялось ранее в сессии).
+   - `npm test` и/или `npm run lint`, если такие скрипты есть.
+   - Локальный запуск сервера: `npm start` **или** `node server.js`.
 
-- No `SyntaxError` or `ReferenceError` in browser console for `/panel`.
-- No failing `npm` scripts used in the task.
-- Keep code readable and consistent (ES modules, modern JS, no unused variables).
-- Prefer minimal dependencies; do not add heavy libraries unless really needed.
+4. **Если тесты / сервер падают**, ты:
+   - Читаешь сообщение об ошибке.
+   - Исправляешь код.
+   - Повторяешь запуск до зелёного статуса.
 
-## When in doubt
+## Требования к панели `/panel` (дизайн и UX)
 
-- If some behaviour is unclear, choose the most pragmatic option and document it briefly in the Pull Request description.
-- Assume the user wants a **fully working, tested feature**, not только «почти готовый» прототип.
+### Визуальный стиль
+
+- Общая тема — тёмный премиальный интерфейс в стиле **iOS glassmorphism**:
+  - Полупрозрачные блоки с размытием фона.
+  - Мягкие тени и подсветки.
+  - Округлые углы, большие карточки.
+- Цветовая палитра:
+  - Основной фон: очень тёмный с легким градиентом (от почти чёрного к глубокому синему).
+  - Акцент: золотисто-янтарные и изумрудные элементы (кнопки, бейджи).
+- Текст:
+  - Основной шрифт — что-то в духе `Inter` или `SF Pro`, через Tailwind (`font-sans`).
+  - Заголовки крупные и читаемые.
+  - Использовать эмодзи там, где это уместно (кнопки запуска, тултипы).
+
+### Компоновка панели
+
+Минимум:
+
+1. **Левая колонка (Sidebar)**  
+   - Логотип/название `Createlen`.
+   - Блок выбора раздела:
+     - Главная страница
+     - Инвестиционное мошенничество
+     - Взлом Госуслуг / банка
+     - Перевод под влиянием
+   - Дополнительно (можно как задел на будущее):
+     - «Проекты» (список сайтов/кейсов)
+     - «История генераций»
+   - Sidebar тоже в стиле glassmorphism.
+
+2. **Основная зона (Main)**  
+   Состоит из:
+
+   - **Header**:
+     - Заголовок текущего сценария (по вкладке).
+     - Короткий подзаголовок.
+     - Бейдж с типом страницы (MAIN / INVESTMENT / GOSUSLUGI / INFLUENCE).
+
+   - **Область промта**:
+     - Большое textarea для JSON-спеки.
+     - Кнопка «✨ Вставить рекомендованный промт».
+     - Подсказка, что JSON можно менять перед отправкой.
+
+   - **Блок управления генерацией**:
+     - Кнопка «🚀 Сгенерировать лендинг».
+     - Кнопка «Очистить лог».
+     - Информация о том, какая ветка и какой workflow используются.
+
+   - **Лог статуса**:
+     - `<pre>` или похожий блок, куда пишется:
+       - переключение вкладок,
+       - отправка запросов,
+       - ответы сервера,
+       - ошибки.
+
+3. **Футер**
+   - Сервисная подпись: `Createlen · Панель управления генерацией лендингов`.
+   - ВНИЗУ красивый элемент в стиле бейджа:  
+     `by ZhenyaTyazh`  
+     с лёгким свечением/рамкой.
+
+### Анимации и детали
+
+- Плавные hover-эффекты на кнопках и карточках.
+- Анимация появления блоков при загрузке/scroll (через Tailwind + CSS, без сторонних JS-библиотек).
+- При переключении вкладки — лёгкая анимация изменения заголовка/бейджа.
+
+## Функциональное поведение панели
+
+1. **Переключение вкладок**
+   - Вкладки с `data-page="main|investment|gosuslugi|influence"`:
+     - меняют активное состояние (CSS-класс),
+     - обновляют заголовок, подзаголовок, бейджи,
+     - НЕ очищают textarea автоматически,
+     - пишут в лог строку типа: `[HH:MM:SS] Переключено на вкладку "investment"`.
+
+2. **Промты (presets)**
+   - JSON-пресеты хранятся в `<script type="application/json" id="preset-...">`.
+   - При нажатии «Вставить рекомендованный промт»:
+     - в `textarea#promptInput` подставляется строка из соответствующего блока.
+     - лог фиксирует факт вставки.
+
+3. **Отправка на backend**
+   - Кнопка запуска:
+     - собирает `page = currentPage`,
+     - берёт `spec = textarea.value`,
+     - делает `POST /webhook` с JSON:
+       ```json
+       {
+         "source": "dashboard",
+         "page": "main|investment|gosuslugi|influence",
+         "spec": "…"
+       }
+       ```
+   - В случае успеха:
+     - пишет в лог HTTP-статус и первые ~400 символов ответа.
+   - В случае ошибки:
+     - пишет в лог человекочитаемое описание.
+     - НЕ даёт странице «упасть» из-за необработанного исключения.
+
+4. **Интеграция с server.js**
+   - Ведение логики `source === "dashboard"`:
+     - чтение `page` и `spec`;
+     - запуск GitHub Actions workflow `openai-landing.yml` через GitHub API (как уже реализовано, но можно доработать обработку ошибок);
+     - возврат корректного JSON с полями `ok`, `message`, `page`, возможно `workflow_dispatch_id` / `github_status`.
+
+5. **Без ошибок в консоли**
+   - На `/panel` не должно быть:
+     - SyntaxError,
+     - Unexpected token,
+     - ReferenceError.
+   - Все сетевые ошибки (`fetch`) — только через try/catch + лог, а не uncaught.
+
+## Стиль кода
+
+- Пиши чистый, понятный JS: функции с понятными именами, без магических чисел.
+- Комментарии — по делу, без воды, в основном над сложной логикой.
+- Не дублируй код, выноси общие части в функции.
+- Соблюдай форматирование (2 пробела, переносы строки).
+
+## Когда задача «готова»
+
+- Локально успешно запускается сервер.
+- `/panel` работает:
+  - вкладки кликаются,
+  - пресеты вставляются,
+  - запросы на `/webhook` отправляются,
+  - логи отображаются,
+  - визуально панель выглядит как современный дорогой интерфейс (glassmorphism).
+- Создан PR с описанием того, что сделано и как тестировалось.
