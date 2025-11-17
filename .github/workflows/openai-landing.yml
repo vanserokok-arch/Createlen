@@ -43,19 +43,20 @@ jobs:
       - name: Update spec.json
         run: |
           mkdir -p specs
-          echo "{\"description\": \"${SPEC}\"}" > specs/landing-spec.json
+          echo '{"description": "'${SPEC}'"}' > specs/landing-spec.json
 
       - name: Generate landing
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           mkdir -p landing
-          echo "<html><body><h1>Generated OK</h1></body></html>" > landing/index.html
-          echo "test" > landing/BUILD_LOG.md
+          # TODO: здесь ваши шаги генерации через OpenAI/скрипты
+          echo '<html><body><h1>Generated OK</h1></body></html>' > landing/index.html
+          echo 'test' > landing/BUILD_LOG.md
 
       - name: Show inputs
         run: |
-          echo "Page: ${{ inputs.page }}" >> $GITHUB_STEP_SUMMARY
+          echo 'Page: ${{ inputs.page }}' >> $GITHUB_STEP_SUMMARY
 
       - name: Commit changes
         run: |
@@ -69,4 +70,4 @@ jobs:
           git push origin "$BRANCH_NAME"
 
       - name: Summary
-        run: echo "Done" >> $GITHUB_STEP_SUMMARY
+        run: echo 'Done' >> $GITHUB_STEP_SUMMARY
