@@ -14,10 +14,10 @@ permissions:
 
 jobs:
   generate-landing:
-    name: Generate Landing with OpenAI
+    name: Generate landing with OpenAI and push to main
     runs-on: ubuntu-latest
     env:
-      BRANCH_NAME: copilot/landing-autogen
+      TARGET_BRANCH: main
       SPEC: ${{ inputs.spec }}
 
     steps:
@@ -27,6 +27,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
           token: ${{ secrets.REPO_PUSH_TOKEN }}
+
+      - name: Ensure we are on target branch
+        run: |
+          echo "Работаем с веткой: $TARGET_BRANCH"
+          git fetch origin --prune
+          git checkout "$TARGET_BRANCH"
+          git pull origin "$TARGET_BRANCH"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -102,8 +109,6 @@ jobs:
         run: |
           echo "🚀 Запуск генерации лендинга..."
           mkdir -p landing
-
-          # Пишем stdout/stderr в лог и не валим job при ошибке
           node scripts/openai/landing_agent.js > landing/BUILD_LOG.md 2>&1 || true
 
           if [ -z "${OPENAI_API_KEY}" ]; then
@@ -123,20 +128,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Create or switch to branch
-        run: |
-          echo "Работа с веткой: $BRANCH_NAME"
-          git fetch origin --prune
-
-          if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
-            echo "Ветка $BRANCH_NAME существует, переключаемся..."
-            git checkout "$BRANCH_NAME"
-            git pull origin "$BRANCH_NAME"
-          else
-            echo "Создаём новую ветку $BRANCH_NAME..."
-            git checkout -b "$BRANCH_NAME"
-          fi
-
       - name: Commit and push changes
         run: |
           git add specs/ landing/ || true
@@ -148,13 +139,27 @@ jobs:
 
           TIMESTAMP="$(date -u +"%Y-%m-%d %H:%M:%S UTC")"
 
-          # Однострочный основной месседж + доп. описание вторым -m
-          git commit -m "feat(landing): auto-generate landing page via OpenAI" \
-                     -m "Generated at: $TIMESTAMP" \
-                     -m "Spec: $SPEC"
+          COMMIT_MSG=$(cat <<EOF
+feat(landing): auto-generate landing page via OpenAI
 
-          git push origin "$BRANCH_NAME"
-          echo "✅ Изменения запушены в ветку $BRANCH_NAME"
+Generated at: $TIMESTAMP
+Spec: $SPEC
+
+Files:
+- specs/landing-spec.json (updated)
+- landing/index.html (generated)
+- landing/styles.css (generated)
+- landing/script.js (generated)
+- landing/BUILD_LOG.md (build log)
+EOF
+)
+
+          echo "Создаём коммит:"
+          echo "$COMMIT_MSG"
+
+          git commit -m "$COMMIT_MSG"
+          git push origin "$TARGET_BRANCH"
+          echo "✅ Изменения запушены в ветку $TARGET_BRANCH"
 
       - name: Summary
         if: always()
@@ -181,12 +186,12 @@ jobs:
           fi
 
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "### Ветка \`$BRANCH_NAME\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Ветка \`$TARGET_BRANCH\`" >> "$GITHUB_STEP_SUMMARY"
 
           if [ -f landing/BUILD_LOG.md ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "### Build Log (tail)" >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
             tail -n 20 landing/BUILD_LOG.md >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
           fi
