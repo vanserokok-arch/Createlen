@@ -1,0 +1,69 @@
+:root {
+  --primary-color: #4F46E5;
+  --secondary-color: #10B981;
+  --background-color: #FFFFFF;
+  --text-color: #1F2937;
+  --heading-font: 'Inter', sans-serif;
+  --body-font: 'Inter', sans-serif;
+}
+
+body {
+  margin: 0;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: var(--body-font);
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--heading-font);
+}
+
+.section {
+  padding: 50px 0;
+}
+
+.hero {
+  text-align: center;
+  padding: 100px 0;
+}
+
+.hero .cta {
+  display: inline-block;
+  background-color: var(--secondary-color);
+  color: var(--background-color);
+  padding: 10px 20px;
+  text-decoration: none;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.cta {
+  text-align: center;
+  padding: 100px 0;
+}
+
+.cta a {
+  display: inline-block;
+  background-color: var(--primary-color);
+  color: var(--background-color);
+  padding: 10px 20px;
+  text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .hero, .cta {
+    padding: 50px 0;
+  }
+}
+Этот CSS код создает адаптивный лендинг с использованием CSS Grid и Flexbox. Он использует переменные CSS для цветов и шрифтов, которые просто подключаются в нужных местах, упрощая поддержку и изменение дизайна.

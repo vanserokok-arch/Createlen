@@ -1,11 +1,11 @@
 {
   "title": "Createlen - AI-Powered Landing Page Generator",
-  "description": "Автоматическое создание лендингов с помощью AI",
+  "description": "Тестовый лендинг. Проверка полного цикла.",
   "sections": [
     {
       "type": "hero",
       "heading": "Создавайте лендинги за минуты",
-      "subheading": "Используйте силу AI для генерации профессиональных landing pages",
+      "subheading": "Тестовый лендинг. Проверка полного цикла.",
       "cta": "Начать бесплатно"
     },
     {
