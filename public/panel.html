@@ -641,6 +641,7 @@
 </script>
 
   <script>
+  document.addEventListener("DOMContentLoaded", () => {
     // Метаданные страниц
     const PAGE_META = {
       main: { title: "Главная страница КЕЙС", subtitle: "Генерация лендинга: настрой промт и запусти workflow", label: "MAIN" },
@@ -649,13 +650,11 @@
       influence: { title: "Перевод под влиянием", subtitle: "Генерация посадочной страницы — перевод под влиянием", label: "INFLUENCE" }
     };
 
-    // Читаем пресеты из script[type="application/json"] блоков
-    const PRESETS = {
-      main: document.getElementById("preset-main").textContent.trim(),
-      investment: document.getElementById("preset-investment").textContent.trim(),
-      gosuslugi: document.getElementById("preset-gosuslugi").textContent.trim(),
-      influence: document.getElementById("preset-influence").textContent.trim(),
-    };
+    // Лениво читаем пресет по нужной вкладке, чтобы не падать при отсутствии блока
+    function getPreset(page) {
+      const el = document.getElementById(`preset-${page}`);
+      return el ? el.textContent.trim() : "";
+    }
 
     // State
     let currentPage = "main";
@@ -672,10 +671,25 @@
     const btnClearLog = document.getElementById("btnClearLog");
     const logEl = document.getElementById("log");
 
+    // Логирование с таймстампом
+    function timeNow() {
+      const d = new Date();
+      return d.toLocaleTimeString();
+    }
+    function appendLog(text) {
+      const line = `[${timeNow()}] ${text}\n`;
+      if (logEl) {
+        logEl.textContent += line;
+        logEl.scrollTop = logEl.scrollHeight;
+      } else {
+        console.log(line);
+      }
+    }
+
     // Переключение вкладок (не затираем textarea при переключении)
     function setActivePage(page) {
       currentPage = page;
-      // UI
+
       sidebarButtons.forEach(btn => {
         if (btn.dataset.page === page) {
           btn.classList.add("active-tab");
@@ -689,85 +703,86 @@
       });
 
       const meta = PAGE_META[page] || PAGE_META.main;
-      pageTitleEl.textContent = meta.title;
-      pageSubtitleEl.textContent = meta.subtitle;
-      badgePageEl.textContent = meta.label;
-      controlBadgeEl.textContent = meta.label;
+      if (pageTitleEl) pageTitleEl.textContent = meta.title;
+      if (pageSubtitleEl) pageSubtitleEl.textContent = meta.subtitle;
+      if (badgePageEl) badgePageEl.textContent = meta.label;
+      if (controlBadgeEl) controlBadgeEl.textContent = meta.label;
+
       appendLog(`Переключено на вкладку "${page}"`);
     }
 
+    // Обработчики для вкладок
     sidebarButtons.forEach(btn => {
       btn.addEventListener("click", () => {
-        setActivePage(btn.dataset.page);
+        const page = btn.dataset.page;
+        if (!page) return;
+        setActivePage(page);
       });
     });
 
     // Вставить рекомендованный промт
-    btnInsertPreset.addEventListener("click", () => {
-      const preset = PRESETS[currentPage] || "";
-      // Вставка заменяет текущее содержимое
-      promptInput.value = preset;
-      appendLog(`Промт для "${currentPage}" заполнен из пресета.`);
-    });
-
-    // Логирование с таймстампом
-    function timeNow() {
-      const d = new Date();
-      return d.toLocaleTimeString();
-    }
-    function appendLog(text) {
-      const line = `[${timeNow()}] ${text}\n`;
-      logEl.textContent += line;
-      logEl.scrollTop = logEl.scrollHeight;
+    if (btnInsertPreset) {
+      btnInsertPreset.addEventListener("click", () => {
+        const preset = getPreset(currentPage);
+        promptInput.value = preset || "";
+        appendLog(`Промт для "${currentPage}" заполнен из пресета.`);
+      });
     }
 
     // Очистить лог
-    btnClearLog.addEventListener("click", () => {
-      logEl.textContent = "";
-      appendLog("Лог очищен.");
-    });
-
-    // Запустить генерацию: постим на /webhook
-    btnRun.addEventListener("click", async () => {
-      const spec = promptInput.value || "";
-      if (!spec.trim()) {
-        appendLog("Ошибка: поле промта пустое. Ничего не отправлено.");
-        return;
-      }
-
-      const payload = {
-        source: "dashboard",
-        page: currentPage,
-        spec
-      };
-
-      btnRun.disabled = true;
-      appendLog(`Отправка на /webhook (page=${currentPage})...`);
-
-      try {
-        const resp = await fetch("/webhook", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-
-        const text = await resp.text();
-        if (resp.ok) {
-          appendLog(`Ответ сервера: ${resp.status} — ${text.slice(0, 400)}`);
-        } else {
-          appendLog(`Ошибка от сервера: ${resp.status} — ${text.slice(0, 400)}`);
+    if (btnClearLog) {
+      btnClearLog.addEventListener("click", () => {
+        if (logEl) {
+          logEl.textContent = "";
         }
-      } catch (err) {
-        appendLog(`Сетевая ошибка: ${err.message}`);
-        console.error(err);
-      } finally {
-        btnRun.disabled = false;
-      }
-    });
+        appendLog("Лог очищен.");
+      });
+    }
+
+    // Запустить генерацию: POST /webhook
+    if (btnRun) {
+      btnRun.addEventListener("click", async () => {
+        const spec = (promptInput.value || "").trim();
+        if (!spec) {
+          appendLog("Ошибка: поле промта пустое. Ничего не отправлено.");
+          return;
+        }
+
+        const payload = {
+          source: "dashboard",
+          page: currentPage,
+          spec
+        };
+
+        btnRun.disabled = true;
+        appendLog(`Отправка на /webhook (page=${currentPage})...`);
+
+        try {
+          const resp = await fetch("/webhook", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          const text = await resp.text();
+          if (resp.ok) {
+            appendLog(`Ответ сервера: ${resp.status} — ${text.slice(0, 400)}`);
+          } else {
+            appendLog(`Ошибка от сервера: ${resp.status} — ${text.slice(0, 400)}`);
+          }
+        } catch (err) {
+          appendLog(`Сетевая ошибка: ${err.message}`);
+          console.error(err);
+        } finally {
+          btnRun.disabled = false;
+        }
+      });
+    }
 
     // Инициализация UI
     setActivePage(currentPage);
     appendLog("Панель инициализирована.");
-  </script>
+  });
+</script>
 </body>
 </html>
