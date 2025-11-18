@@ -15,6 +15,18 @@ app.use(express.urlencoded({ extended: true }));
 
 
 app.use(express.static(path.join(__dirname, "public")));
+app.use("/landing", express.static(path.join(__dirname, "landing")));
+
+// === LANDING PAGES ===
+// Serve investment landing page
+app.get("/landing/investment", (req, res) => {
+  res.sendFile(path.join(__dirname, "landing", "investment.html"));
+});
+
+// Serve main landing page
+app.get("/landing", (req, res) => {
+  res.sendFile(path.join(__dirname, "landing", "index.html"));
+});
 
 // === СТАРЫЕ ЭНДПОИНТЫ (оставляем, чтобы ничего не сломать) ===
 app.get("/", (req, res) => {
@@ -45,15 +57,6 @@ app.post("/webhook", async (req, res) => {
       if (!spec || typeof spec !== "string" || !spec.trim()) {
         return res.status(400).json({ ok: false, message: "Empty spec in dashboard request" });
       }
-
-
-      // Конфигурация из окружения
-      const githubToken = process.env.GITHUB_WORKFLOW_TOKEN;
-      const repoOwner = process.env.GITHUB_REPO_OWNER || "vanserokok-arch";
-      const repoName = process.env.GITHUB_REPO_NAME || "Createlen";
-      const workflowId = process.env.LANDING_WORKFLOW_ID || "openai-landing.yml";
-      const ref = "main";
-
 
 
       // Конфигурация из окружения
@@ -136,32 +139,6 @@ app.post("/panel/generate", async (req, res) => {
     const text = await localRes.text();
     res.status(localRes.status).send(text);
   } catch (err) {
-
-  } catch (err) {
-    console.error("Error in /webhook:", err);
-    res.status(500).json({ ok: false, message: "Internal server error in /webhook" });
-  }
-});
-
-// Маршрут отдачи панели (статический файл public/panel.html)
-app.get("/panel", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "panel.html"));
-});
-
-// Для совместимости оставляем /panel/generate (старый маршрут), проксируем в /webhook
-app.post("/panel/generate", async (req, res) => {
-  const body = Object.assign({}, req.body);
-  if (!body.source) body.source = "dashboard";
-  try {
-    const localRes = await fetch(`http://127.0.0.1:${PORT}/webhook`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-    const text = await localRes.text();
-    res.status(localRes.status).send(text);
-  } catch (err) {
-
     console.error("Error proxying /panel/generate -> /webhook:", err);
     res.status(500).send("Ошибка сервера при проксировании запроса.");
   }
