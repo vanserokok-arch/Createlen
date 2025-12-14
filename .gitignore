@@ -1,6 +1,8 @@
-.DS_Store
-.env
 node_modules/
+*.pid
+.vscode/
+screenshots/
+_archive/
+*.bak
 *.log
-.openai_key
-secrets.json
+.DS_Store
