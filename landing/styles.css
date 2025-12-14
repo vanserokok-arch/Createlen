@@ -1,3 +1,115 @@
+/* ===== keis-header desktop dropdown + flush-left logo (>=900px only) ===== */
+@media (min-width: 900px) {
+  /* Full-bleed header on desktop: logo flush to viewport edge */
+  .keis-header {
+    width: 100%;
+  }
+
+  .keis-header .keis-header-inner {
+    width: 100%;
+    max-width: none;     /* IMPORTANT: no container constraint on desktop */
+    margin: 0;           /* IMPORTANT: no centering that offsets the logo */
+    padding-left: 0;     /* IMPORTANT: logo touches left edge */
+    padding-right: 16px; /* keep a little breathing room on the right */
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    justify-content: flex-start; /* we control right-side pinning via margins */
+    gap: 18px;
+  }
+
+  .keis-header .keis-header-logo {
+    margin: 0;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+  }
+
+  /* Desktop nav visible, burger hidden */
+  .keis-header .keis-header-nav {
+    display: block !important;
+  }
+
+  .keis-header .keis-header-burger {
+    display: none !important;
+  }
+
+  /* Right cluster: keep nav visually near phone/contacts, CTA pinned far right */
+  .keis-header .keis-header-center {
+    margin-left: auto;          /* push the whole cluster to the right */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 0 0 auto;
+    justify-content: flex-end;
+  }
+
+  .keis-header .keis-header-nav-list {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .keis-header .keis-header-contacts {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Ensure CTA is the far-right element */
+  .keis-header .keis-header-center-cta {
+    margin-left: 14px;
+    flex: 0 0 auto;
+  }
+
+  /* Dropdown "Направления": hidden by default, opens ONLY via .is-open (JS) */
+  .keis-header .keis-header-nav-list > li.has-children {
+    position: relative;
+  }
+
+  .keis-header .keis-header-nav-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    min-width: 280px;
+    padding: 10px 10px;
+    margin: 0;
+    list-style: none;
+    border-radius: 12px;
+    background: rgba(12, 8, 6, 0.92);
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 18px 48px rgba(0,0,0,0.65);
+    z-index: 2000;
+  }
+
+  .keis-header .keis-header-nav-list > li.has-children.is-open > .keis-header-nav-dropdown {
+    display: block;
+  }
+
+  /* Hard-disable hover/focus auto-open (must not open without click) */
+  .keis-header .keis-header-nav-list > li.has-children:hover > .keis-header-nav-dropdown,
+  .keis-header .keis-header-nav-list > li.has-children:focus-within > .keis-header-nav-dropdown {
+    display: none;
+  }
+
+  .keis-header .keis-header-nav-dropdown li {
+    margin: 0;
+  }
+
+  .keis-header .keis-header-nav-dropdown a {
+    display: block;
+    padding: 10px 12px;
+    border-radius: 10px;
+    text-decoration: none;
+  }
+}
 /* ==========================
    FAQ — ULTRA PREMIUM (Apple / Stripe style)
    ========================== */
@@ -204,81 +316,9 @@
     align-items: center;
   }
 }
-/* ==========================
-   FINAL AUTHORITATIVE OVERRIDES (keis-header, hero, scenarios)
-   ========================== */
-/* fixed by script — keis header authoritative override */
-.keis-header {
-  position: static !important;
-  display: flex !important;
-  z-index: 1200 !important;
-  width: 100%;
-}
-.keis-header .header-container {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
-}
-.keis-header .header-nav {
-  display: flex !important;
-  gap: 1.2rem !important;
-}
-
-/* ===== Desktop (>=900px): tighter right cluster + logo more left ===== */
-@media (min-width: 900px) {
-  /* Make header content use more of the viewport (logo shifts left naturally) */
-  .keis-header .header-container {
-    max-width: 1400px !important;
-    padding-left: 12px !important;
-    padding-right: 12px !important;
-    justify-content: flex-start !important;
-    gap: 14px !important;
-  }
-
-  /* Logo block slightly tighter */
-  .keis-header .header-left {
-    margin-right: 12px !important;
-  }
-
-  /* Push nav + contacts towards the CTA (to the right) */
-  .keis-header .header-nav {
-    margin-left: auto !important;
-    gap: 1.05rem !important;
-  }
-
-  /* Compact the contact cluster so it visually “sticks” to the CTA */
-  .keis-header .header-contact {
-    margin-left: 0.75rem !important;
-    gap: 0.55rem !important;
-  }
-
-  /* CTA: nudge to the far right edge and keep a small safe padding */
-  .keis-header .keis-header-cta,
-  .keis-header .header-cta,
-  .keis-header .header-cta--desktop {
-    margin-left: 0.9rem !important;
-    margin-right: 0 !important;
-  }
-}
-@media (max-width: 899px) {
-  .keis-header .header-nav { display: none !important; }
-  #mobileMenu, .keis-mobile-menu { display: block; }
-}
-@media (min-width: 900px) {
-  #mobileMenu, .keis-mobile-menu { display: none !important; }
-}
-body.page-investment > nav, .legacy-nav, .site-breadcrumbs {
-  display: none !important;
-}
 
 /* fixed by script — hero authoritative override */
 @media (min-width: 900px) {
-  .investment-hero {
-    padding-top: calc(var(--keis-header-height-desktop,82px) + 12px) !important;
-  }
   .hero-container {
     display: grid !important;
     grid-template-columns: minmax(0,1.1fr) minmax(0,0.9fr) !important;
@@ -1065,21 +1105,11 @@ body.page-investment > nav, .legacy-nav, .site-breadcrumbs {
   .cases-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .faq-grid { grid-template-columns: 1.25fr 0.75fr; }
   
-  /* extra-small: tighten phone digit spacing further */
-  .header-contact-phone { letter-spacing: 0.02em; }
-
-  /* Move logo almost to the bottom of the header on very small screens */
-  /* Increase bottom padding of header and align logo to flex-end */
-  .investment-header { padding-bottom: 0.9rem; }
-  .header-container { align-items: flex-start; }
-  .header-logo { align-self: flex-end; margin-bottom: 2px; }
+  /* extra-small: tighten phone digit spacing further (legacy header removed) */
 }
 
 /* ≤992px: переход на двухколоночные/одноколоночные сетки */
 @media (max-width: 992px) {
-  /* Header */
-  .header-nav { gap: 0.6rem; }
-
   /* Hero */
   .hero-container { grid-template-columns: 1fr; gap: 1.6rem; }
   .hero-form-wrapper { justify-content: center; }
@@ -1365,7 +1395,6 @@ body.page-investment > nav, .legacy-nav, .site-breadcrumbs {
 /* Явно применяем Roboto Slab к всем кнопкам, перекрывая локальные стили */
 .btn,
 .btn-primary,
-.header-cta,
 .faq-ask-btn,
 .timeline-submit,
 .hero-form-submit {
@@ -1816,38 +1845,17 @@ body.page-investment {
   min-height: 100vh;
 }
 
-/* Скрываем устаревший/служебный top-level nav и несемантические breadcrumbs,
-   которые могут рендериться под фиксированной шапкой на странице investment.html.
-   Оставляем видимой только .investment-header (site header). */
+/* Скрываем устаревший/служебный top-level nav и несемантические breadcrumbs
+   на странице investment.html. */
 body.page-investment > nav,
 body.page-investment > .breadcrumbs,
 body.page-investment > .breadcrumb,
 .breadcrumbs,
 .breadcrumb,
-.legacy-nav,
-.site-breadcrumbs,
 .page-breadcrumbs {
   display: none !important;
   visibility: hidden !important;
   pointer-events: none !important;
-}
-
-/* Defensive: hide any header elements that are direct children of body except the main site header */
-/* Allow our .keis-header to be visible — hide only legacy headers that are not in use */
-body.page-investment > header:not(.investment-header):not(.keis-header) {
-  display: none !important;
-}
-
-/* Header sizing variables (used to compute hero padding) */
-:root {
-  --investment-header-height-desktop: 76px; /* includes padding */
-  /* увеличиваем мобильную высоту шапки, чтобы в неё помещались телефон и кнопка без наложения */
-  --investment-header-height-mobile: 104px;
-}
-
-/* HEADER — site header */
-.investment-header {
-  display: none !important;
 }
 
 .keis-header-center-cta::before {
@@ -1869,138 +1877,8 @@ body.page-investment > header:not(.investment-header):not(.keis-header) {
   transform: translateX(-100%);
   animation: keis-shimmer 2s ease-in-out infinite;
 }
-  .header-contact--desktop { display:none !important; }
+  /* Small accessibility/tap-target adjustments */
 
-  /* Mobile CTA: keep compact CTA visible under phone */
-  .header-cta--desktop { display:none !important; }
-  .header-cta--compact { display:inline-flex !important; }
-
-  /* Logo smaller on mobile but stays left and vertically centered */
-  .header-logo-img { max-height:48px; }
-
-
-/* Hide small decorative icons in center column on mobile: keep only the phone number and CTA */
-@media (max-width: 899px) {
-  .header-contact-icon--phone-small,
-  .header-contact-social--tg-small,
-  .header-contact-social--wa-small,
-  .header-contact-icon--phone { display: none !important; }
-
-  /* Ensure container centers vertically and forbids wrapping to a second header row */
-  .header-container { align-items: center !important; }
-  .header-center { gap: 4px; }
-  .header-phone-row { justify-content: center; }
-}
-
-/* Burger size rules: 600–899 => 32x32 (icon 24x24); <=599 => 28x28 (icon 22x22) */
-.header-burger { width: 32px; height: 32px; display:inline-flex; align-items:center; justify-content:center; }
-.burger-icon { width: 24px; height: 24px; display:block; background-image: url('./assets/icons/align.png'); background-repeat:no-repeat; background-position:center; background-size: contain; transition: transform .22s ease; }
-
-@media (max-width: 599px) {
-  .header-burger { width: 28px; height: 28px; }
-  .burger-icon { width: 22px; height: 22px; }
-}
-
-/* Rotation when open (JS toggles .is-open on #burgerBtn) */
-.header-burger.is-open .burger-icon,
-.header-burger.open .burger-icon { transform: rotate(90deg); }
-
-/* Ensure burger never shifts up: center alignment rules */
-.header-burger, .header-burger * { vertical-align: middle; }
-
-/* Logo must remain inside .header-left and never overlap phone */
-.header-left { z-index: 1220; }
-.header-center { z-index: 1210; }
-
-/* Ensure there is space for fixed header so content not hidden
-  (desktop offset is managed by a single authoritative rule at EOF). */
-@media (max-width: 899px) {
-  /* keep mobile offset logic here (tablet/phone) but avoid duplicating desktop offsets */
-  .investment-hero { padding-top: calc(var(--investment-header-height-mobile) + 12px); }
-}
-
-/* Small accessibility/tap-target adjustments */
-.header-contact-phone { display:inline-block; }
-.header-contact-icon { vertical-align: middle; }
-
-
-/* Header layout: используем только .keis-header, остальные legacy header-классы отключены */
-.keis-header {
-  width: 100%;
-  background: #181818;
-  color: #fff;
-  border-bottom: 1px solid #f97316;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
-  position: relative;
-  z-index: 100;
-}
-.keis-header .header-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 2rem;
-}
-.keis-header .header-left {
-  display: flex;
-  align-items: center;
-}
-.keis-header .header-logo-img {
-  display: block;
-  max-height: 56px;
-  height: auto;
-}
-.keis-header .header-nav {
-  display: flex;
-  gap: 2.25rem;
-  align-items: center;
-}
-.keis-header .header-contact {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-}
-.keis-header .header-contact-phone {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #f97316;
-  text-decoration: none;
-}
-.keis-header .header-contact-phone:hover {
-  color: #fff;
-}
-.keis-header .header-burger {
-  display: none;
-}
-@media (max-width: 899px) {
-  .keis-header .header-container {
-    flex-direction: row;
-    padding: 0 1rem;
-  }
-  .keis-header .header-burger {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    background: transparent;
-    border: none;
-    padding: 0;
-  }
-  .keis-header .header-logo-img {
-    max-height: 44px;
-  }
-  .keis-header .header-contact-phone {
-    font-size: 0.88rem;
-  }
-}
-/* Отключаем все legacy header-классы */
-.investment-header, .header, .mainHeader, .site-header {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
 /* HERO */
 /* Блок "РЕАЛЬНЫЕ ИСТОРИИ" — авторитетная реализация */
 .investment-scenarios {
@@ -2078,332 +1956,6 @@ body.page-investment > header:not(.investment-header):not(.keis-header) {
   display: flex;
   gap: 1rem;
 }
-/* Header height variables */
-:root {
-  --investment-header-height-desktop: 76px; /* >=1200 */
-  --investment-header-height-1200-899: 76px; /* fallback */
-  --investment-header-height-tablet: 72px; /* 600-899 */
-  --investment-header-height-mobile: 104px; /* <=599 */
-}
-
-/* Defensive hide for legacy navs/breadcrumbs */
-body.page-investment > nav,
-body.page-investment > .breadcrumbs,
-body.page-investment > .breadcrumb,
-.legacy-nav,
-.page-breadcrumbs { display: none !important; visibility: hidden !important; pointer-events: none !important; }
-
-/* Core header layout — one-row baseline */
-.investment-header {
-  position: fixed !important;
-  top: 0; left: 0; right: 0;
-  z-index: 1200;
-  height: var(--investment-header-height-desktop) !important;
-  padding: 0;
-  background: rgba(13,9,8,0.92) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(249,115,22,0.06);
-  display: block;
-}
-
-/* Header container: control layout per breakpoint. Keep DOM order unchanged. */
-.header-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 20px;
-  box-sizing: border-box;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 12px;
-}
-
-/* Left: logo — fixed size behavior, do not shrink to allow single row */
-.header-left {
-  display: flex !important;
-  align-items: center !important;
-  flex: 0 0 auto !important;
-  min-width: 0;
-}
-.header-logo-img { display:block; width: auto; max-height: 56px; height: auto; }
-
-/* Center: phone + compact CTA (on mobile/tablet). Keep centered and do not flex-grow too much. */
-.header-center {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 8px;
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-/* Desktop contact block (right) — phone + social + CTA */
-.header-contact--desktop {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px;
-  flex: 0 0 auto;
-}
-
-/* Burger always on right; do not let it wrap */
-.header-burger {
-  display: none; /* default hidden on desktop */
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  background: transparent;
-  border: none;
-  padding: 0;
-}
-.burger-icon { display:block; background-image: url('./assets/icons/align.png'); background-repeat:no-repeat; background-position:center; background-size: contain; transition: transform .22s ease; }
-
-/* Legacy .header-cta rules removed — CTAs are now controlled by .keis-header-cta / .keis-header-center-cta */
-
-/* ===== Desktop: >=1200px ===== */
-@media (min-width: 1200px) {
-  .investment-header { height: var(--investment-header-height-desktop) !important; }
-  .header-container { display:flex; }
-  .header-nav { display:flex !important; gap: 28px; align-items: center; }
-  .header-contact--desktop { display:flex !important; }
-  .header-center { order: 2; }
-  .header-left { order: 1; }
-  .header-burger { display: none !important; }
-  .header-logo-img { max-height: 56px; }
-  /* Sizes */
-  .header-contact-phone { font-size: 1.05rem; }
-  /* legacy .header-cta sizing removed — CTAs handled by .keis-header-cta */
-  /* Hero offset (commented) — authoritative desktop offset moved to EOF */
-  /* .investment-hero { padding-top: calc(var(--investment-header-height-desktop) + 12px) !important; } */
-}
-
-/* ===== Desktop / Large laptop: 900–1199px (compact desktop) ===== */
-@media (min-width: 900px) and (max-width: 1199px) {
-  .investment-header { height: var(--investment-header-height-1200-899) !important; }
-  .header-logo-img { max-height: 52px; }
-  .header-contact-phone { font-size: 0.95rem; }
-  /* legacy .header-cta sizing removed for compact desktop */
-  .header-burger { display: none !important; }
-  /* .investment-hero { padding-top: calc(var(--investment-header-height-1200-899) + 12px) !important; } */
-}
-
-/* ===== Tablet / large phones: 600–899px ===== */
-@media (min-width: 600px) and (max-width: 899px) {
-  .investment-header { height: var(--investment-header-height-tablet) !important; }
-  .header-container { display: grid !important; grid-template-columns: auto 1fr auto; align-items: center !important; gap: 8px; }
-  .header-left { justify-self: start; }
-  .header-center { grid-column: 2; display:flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
-  .header-contact--desktop { display: none !important; }
-  .header-cta--compact { display: inline-flex !important; }
-  .header-burger { display: inline-flex !important; justify-self: end; }
-  .header-logo-img { max-height: 48px; }
-  .header-contact-phone { font-size: 0.88rem; }
-  /* legacy .header-cta sizing removed for tablet */
-  .header-burger { width: 32px; height: 32px; }
-  .burger-icon { width: 24px; height: 24px; }
-  /* .investment-hero { padding-top: calc(var(--investment-header-height-tablet) + 12px) !important; } */
-}
-
-/* ===== Mobile: 376–599px ===== */
-@media (min-width: 376px) and (max-width: 599px) {
-  .investment-header { height: var(--investment-header-height-mobile) !important; }
-  .header-container { display: grid !important; grid-template-columns: auto 1fr auto; align-items: center !important; gap: 6px; }
-  .header-logo-img { max-width: 132px; max-height: 48px; }
-  .header-contact-phone { font-size: 0.82rem; letter-spacing: 0.06em; }
-  /* legacy .header-cta sizing removed for medium mobile */
-  .header-burger { width: 32px; height: 32px; }
-  .burger-icon { width: 24px; height: 24px; }
-  /* Hide social icons in center */
-  .header-contact-social, .header-contact-icon--phone { display: none !important; }
-  /* .investment-hero { padding-top: calc(var(--investment-header-height-mobile) + 12px) !important; } */
-}
-
-/* ===== Small mobile: <=375px ===== */
-@media (max-width: 375px) {
-  .investment-header { height: var(--investment-header-height-mobile) !important; }
-  .header-container { display: grid !important; grid-template-columns: auto 1fr auto; align-items: center !important; gap: 6px; }
-  .header-logo-img { max-width: 118px; max-height: 44px; }
-  .header-contact-phone { font-size: 0.78rem; letter-spacing: 0.04em; }
-  /* legacy .header-cta sizing removed for small mobile */
-  .header-burger { width: 28px !important; height: 28px !important; }
-  .burger-icon { width: 22px !important; height: 22px !important; }
-  /* Reduce gaps slightly to avoid wrapping */
-  .header-container { gap: 6px; }
-  .investment-hero { padding-top: calc(var(--investment-header-height-mobile) + 12px) !important; }
-  /* Ensure flex shrink so no wrapping: allow center to shrink but not below 0 */
-  .header-center { min-width: 0; }
-  /* legacy .header-cta whitespace rule removed */
-}
-
-/* Burger open rotation */
-.header-burger.is-open .burger-icon, .header-burger.open .burger-icon { transform: rotate(90deg); }
-
-/* Ensure mobile menu panel appears under header and does not overlap unexpectedly */
-#mobileMenu { top: calc(var(--investment-header-height-mobile)); }
-
-/* Final defensive rules to prevent old conflicting display toggles */
-.header-nav { display: flex !important; }
-.header-contact { display: flex !important; }
-
-/* Ensure only one source of phone/cta is visible at a time to avoid duplicates
-   - on narrow screens show .header-center (stacked mobile controls)
-   - on wide screens hide .header-center and show .header-contact--desktop
-*/
-@media (max-width: 899px) {
-  .header-center { display: flex !important; }
-  .header-center .header-phone-row, .header-center .header-cta-row { display: flex !important; }
-  .header-contact--desktop { display: none !important; }
-}
-
-@media (min-width: 900px) {
-  .header-center { display: none !important; }
-  .header-contact--desktop { display: flex !important; }
-}
-
-
-/* ======= Strong header & hero final overrides (ensure single source of truth) ======= */
-/* These rules intentionally placed AFTER other header/hero rules to avoid conflicts. */
-
-/* Ensure desktop hero starts below fixed header */
-@media (min-width: 900px) {
-  .investment-hero {
-    /* Desktop: hero начинается сразу под обычной (нефиксированной) шапкой keis-header */
-    padding-top: 0.5rem !important;
-    padding-left: 0;
-    padding-right: 0;
-    padding-bottom: 4.5rem;
-    /* Полноэкранный первый экран без вычитания высоты старой шапки */
-    min-height: 100vh;
-    background-size: cover, cover;
-    background-position: center top, center top;
-    background-repeat: no-repeat, no-repeat;
-  }
-
-  /* Desktop: hide mobile-specific menu */
-  /* Keep mobile menu inert on desktop without display:none to avoid specificity wars */
-  #mobileMenu { pointer-events: none; opacity: 0; }
-}
-
-/* 600–899px: slightly smaller header, keep hero offset stable */
-@media (min-width: 600px) and (max-width: 899px) {
-  .investment-hero {
-    padding-top: calc(72px + 12px) !important; /* stable offset for tablet */
-    padding-left: 1rem;
-    padding-right: 1rem;
-    padding-bottom: 3.2rem;
-    min-height: calc(100vh - 72px);
-    background-size: cover, cover;
-    background-position: center top, center top;
-    background-repeat: no-repeat, no-repeat;
-  }
-
-  /* Ensure header is single-row and stable */
-  .investment-header { height: 72px !important; }
-  .header-logo-img { max-height:48px; }
-}
-
-/* 376–599px: default mobile header height */
-@media (min-width: 376px) and (max-width: 599px) {
-  .investment-hero {
-    padding-top: calc(var(--investment-header-height-mobile) + 12px) !important;
-    padding-left: 0.9rem;
-    padding-right: 0.9rem;
-    padding-bottom: 2.8rem;
-    min-height: calc(100vh - var(--investment-header-height-mobile));
-    background-size: cover, cover;
-    background-position: center top, center top;
-    background-repeat: no-repeat, no-repeat;
-  }
-
-  .investment-header { height: var(--investment-header-height-mobile) !important; }
-}
-
-/* ≤375px: very small phones */
-@media (max-width: 375px) {
-  .investment-hero {
-    padding-top: calc(var(--investment-header-height-mobile) + 12px) !important;
-    padding-left: 0.7rem;
-    padding-right: 0.7rem;
-    padding-bottom: 2.4rem;
-    min-height: calc(100vh - var(--investment-header-height-mobile));
-    background-size: cover, cover;
-    background-position: center top, center top;
-    background-repeat: no-repeat, no-repeat;
-  }
-
-  /* Slightly smaller burger and logo so nothing wraps */
-  .header-burger { width: 28px !important; height: 28px !important; }
-  .burger-icon { width: 22px !important; height: 22px !important; }
-  .header-logo-img { max-height:44px !important; }
-}
-
-/* Mobile menu panel rules: will be toggled with .open class by JS */
-@media (max-width: 899px) {
-  /* Wrapper that covers viewport and contains overlay + panel */
-  .keis-mobile-menu {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    display: none; /* hidden by default */
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .keis-mobile-menu.is-open {
-    display: block !important;
-  }
-
-  .keis-mobile-menu-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.45);
-    transition: opacity .25s ease;
-    opacity: 1;
-  }
-
-  .keis-mobile-menu-panel {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 78%;
-    max-width: 420px;
-    height: auto;
-    max-height: calc(100vh - 40px);
-    padding-bottom: 20px;
-    background: linear-gradient(180deg,#0b0b0b,#0f0f0f);
-    color: var(--text-primary);
-    padding: 22px;
-    transform: translateX(100%);
-    transition: transform .35s ease;
-    box-shadow: -12px 0 30px rgba(0,0,0,0.6);
-    overflow-y: auto;
-  }
-
-  .keis-mobile-menu.is-open .keis-mobile-menu-panel {
-    transform: translateX(0);
-  }
-
-  .mobile-menu-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 6px;
-  }
-
-  .mobile-menu-list a,
-  .mobile-menu-list button {
-    color: var(--text-secondary);
-    text-decoration: none;
-    font-size: 1.05rem;
-    background: transparent;
-    border: none;
-    padding: 8px 6px;
-    text-align: left;
-    width: 100%;
-    display: block;
-  }
 
   .mobile-has-submenu .mobile-submenu {
     display: none;
@@ -2496,67 +2048,7 @@ body.page-investment > nav, body.page-investment > .breadcrumbs { display: none 
   box-sizing: border-box;
 }
 
-/* ===== New authoritative header implementation (developer prompt) =====
-   - Provides a single, semantic header for all breakpoints
-   - Logo left, mobile center stack (phone + compact CTA), desktop right block (phone + CTA)
-   - Fixed header with hero offset = header height + 12px
-*/
-
-/* reset minimal header styles to avoid duplicates */
-.investment-header { position: fixed !important; top:0; left:0; right:0; z-index:1200; background: rgba(13,9,8,0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.03); }
-.header-container { max-width:1400px; margin:0 auto; padding:0 20px; box-sizing:border-box; display:flex; align-items:center; gap:12px; }
-.header-left { flex:0 0 auto; display:flex; align-items:center; }
-.header-logo-img { max-height:56px; width:auto; display:block; }
-.header-nav { display:flex; gap:20px; margin-left: 12px; }
-.header-nav-link { color: var(--text-primary); text-decoration:none; font-weight:600; font-size:0.95rem; padding:6px 0; }
-
-/* center (mobile) and right (desktop) blocks */
-.header-center { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; flex:1 1 auto; min-width:0; }
-.header-phone-row { display:flex; align-items:center; justify-content:center; }
-.header-contact-phone { color: #fff; font-weight:600; text-decoration:none; white-space:nowrap; }
- 
-
-.header-contact--desktop { display:flex; align-items:center; gap:12px; flex:0 0 auto; }
-.header-burger { background:transparent; border:0; padding:0; display:flex; align-items:center; justify-content:center; }
-.burger-icon { width:24px; height:24px; background-image: url('./assets/icons/align.png'); background-repeat:no-repeat; background-position:center; background-size:contain; transition: transform .22s ease; }
-.header-burger.is-open .burger-icon, .header-burger.open .burger-icon { transform: rotate(90deg); }
-
-/* Mutual exclusivity: mobile center visible on small screens; desktop contact visible on large */
-@media (max-width: 899px) {
-  .header-nav { display:none !important; }
-  .header-contact--desktop { display:none !important; }
-  .header-center { display:flex !important; }
-  .investment-header { height: 64px; }
-  .header-logo-img { max-height:48px; }
-  .header-burger { display:flex; }
-  #mobileMenu { top: 64px; }
-  /* .investment-hero { padding-top: calc(64px + 12px) !important; } */
-}
-
-@media (min-width: 900px) {
-  .header-center { display:none !important; }
-  .header-contact--desktop { display:flex !important; }
-  .header-burger { display:none !important; }
-  .investment-header { height: 76px; }
-  .header-logo-img { max-height:56px; }
-  /* .investment-hero { padding-top: calc(76px + 12px) !important; } */
-}
-
-/* small tweaks for very small screens */
-@media (max-width: 375px) {
-  .investment-header { height: 60px; }
-  .header-logo-img { max-height:40px; }
-  .burger-icon { width:20px; height:20px; }
-  /* .investment-hero { padding-top: calc(60px + 12px) !important; } */
-}
-
-/* ensure no duplicate phone/cta appear */
-.header-center, .header-contact--desktop { min-width:0; }
-
-/* Accessibility focus styles */
-.header-cta:focus, .header-nav-link:focus, .header-contact-phone:focus { outline: 3px solid rgba(249,115,22,0.25); outline-offset:2px; }
-
-/* End header authoritative block */
+/* Hero title & layout */
 
 .hero-title {
   position: relative;
@@ -2642,583 +2134,7 @@ body.page-investment > nav, body.page-investment > .breadcrumbs { display: none 
   }
 }
 
-/* ==================================================
-   KEIS HEADER — purge legacy header and new styles
-   - Neutralize all legacy header selectors to avoid conflicts
-   - Provide a single authoritative, responsive .keis-header
-================================================== */
-
-/* Neutralize legacy header selectors so old rules cannot conflict */
-.investment-header,
-.header,
-.mainHeader,
-.site-header,
-.vestmet-header,
-.header-nav,
-.header-burger,
-.burger-icon,
-.header-container,
-.header-left,
-.header-center,
-.header-contact,
-.header-cta {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-
-/* KEIS header sizes (used by body offset below) */
-:root {
-  --keis-header-height-mobile: 72px;
-  --keis-header-height-desktop: 82px;
-}
-/* No automatic body padding — header is not fixed anymore */
-body { padding-top: 0 !important; }
-
-/* Core keis-header styles */
-.keis-header {
-  /* non-fixed header: participate in normal document flow */
-  position: static;
-  width: 100%;
-  background: rgba(0,0,0,0.85);
-  height: var(--keis-header-height-desktop);
-}
-
-.keis-header-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  /* keep logo visually pressed to the left edge of the content area */
-  padding-left: 0; /* no left padding to allow logo to sit on the left edge */
-  padding-right: 20px;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  box-sizing: border-box;
-}
-
-.keis-header-logo { display: block; flex: 0 0 auto; margin-left: 0; }
-.keis-header-logo img {
-  display: block;
-  width: auto;
-  height: 48px; /* desktop default: within 40-52px */
-  max-height: 52px;
-  object-fit: contain;
-}
-
-.keis-header-cta {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: rgba(249,115,22,0.05); /* very subtle orange inside */
-  color: #fff; /* label color */
-  font-weight: 700;
-  border-radius: 0; /* sharp corners */
-  text-decoration: none;
-  overflow: visible;
-  z-index: 2; /* above pseudo-elements */
-}
-
-/* Shared visual for header CTAs (desktop and mobile center). Keeps animations, border and shimmer identical. */
-.keis-header-cta,
-.keis-header-center-cta {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: rgba(249,115,22,0.05);
-  color: #fff;
-  font-weight: 700;
-  border-radius: 0;
-  text-decoration: none;
-  white-space: nowrap;
-  overflow: visible;
-  z-index: 2;
-}
-
-/* Unified snake border for both header CTAs */
-.keis-header-cta::before,
-.keis-header-center-cta::before {
-  content: "";
-  position: absolute;
-  inset: -3px;
-  pointer-events: none;
-  z-index: 1;
-  background-image:
-    linear-gradient(90deg,#f97316,#fbbf24),
-    linear-gradient(180deg,#f97316,#fbbf24),
-    linear-gradient(270deg,#f97316,#fbbf24),
-    linear-gradient(0deg,#f97316,#fbbf24);
-  background-repeat: no-repeat;
-  background-size: 0% 3px, 3px 0%, 0% 3px, 3px 0%;
-  background-position: top left, top right, bottom left, top left;
-  animation: keis-snake 2.8s linear infinite;
-}
-
-/* Unified inner shimmer */
-.keis-header-cta::after,
-.keis-header-center-cta::after {
-  content: "";
-  position: absolute;
-  inset: 1px;
-  border-radius: 0;
-  background: linear-gradient(120deg, rgba(249,115,22,0.06), rgba(251,191,36,0.03), rgba(249,115,22,0.06));
-  transform: translateX(-110%);
-  z-index: 0;
-  mix-blend-mode: screen;
-  animation: keis-shimmer 2s ease-in-out infinite;
-  animation-delay: 0.1s;
-  opacity: 0.95;
-}
-/* Animated snake border using 4 layered linear-gradients animated via background-size. 
-   Animations are activated on desktop only (see media query below). */
-.keis-header-cta::before {
-  content: "";
-  position: absolute;
-  inset: -3px; /* border thickness */
-  pointer-events: none;
-  z-index: 1;
-  background-image:
-    linear-gradient(90deg,#f97316,#fbbf24), /* top */
-    linear-gradient(180deg,#f97316,#fbbf24), /* right */
-    linear-gradient(270deg,#f97316,#fbbf24), /* bottom */
-    linear-gradient(0deg,#f97316,#fbbf24); /* left */
-  background-repeat: no-repeat;
-  background-size: 0% 3px, 3px 0%, 0% 3px, 3px 0%;
-  background-position: top left, top right, bottom left, top left;
-  /* animate on all viewports */
-  animation: keis-snake 2.8s linear infinite;
-}
-
-/* inner shimmer overlay (no animation on small screens) */
-.keis-header-cta::after {
-  content: "";
-  position: absolute;
-  inset: 1px; /* inside the border */
-  border-radius: 0;
-  background: linear-gradient(120deg, rgba(249,115,22,0.06), rgba(251,191,36,0.03), rgba(249,115,22,0.06));
-  transform: translateX(-110%);
-  z-index: 0;
-  mix-blend-mode: screen;
-  opacity: 0.9;
-  animation: keis-shimmer 2s ease-in-out infinite;
-  animation-delay: 0.1s;
-}
-
-/* Center CTA (mobile) uses same visual style but slightly smaller */
-.keis-header-center-cta {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 12px;
-  background: rgba(249,115,22,0.04);
-  color: #fff;
-  font-weight: 600;
-  border-radius: 0;
-  text-decoration: none;
-  z-index: 2;
-  overflow: visible;
-}
-.keis-header-center-cta::before,
-.keis-header-center-cta::after {
-  /* reuse logic from desktop CTA */
-  content: "";
-  position: absolute;
-  pointer-events: none;
-}
-.keis-header-center-cta::before {
-  inset: -2px;
-  z-index: 1;
-  background-image:
-    linear-gradient(90deg,#f97316,#fbbf24),
-    linear-gradient(180deg,#f97316,#fbbf24),
-    linear-gradient(270deg,#f97316,#fbbf24),
-    linear-gradient(0deg,#f97316,#fbbf24);
-  background-repeat: no-repeat;
-  background-size: 0% 2px, 2px 0%, 0% 2px, 2px 0%;
-  animation: keis-snake 2.8s linear infinite;
-}
-.keis-header-center-cta::after {
-  inset: 1px;
-  z-index: 0;
-  background: linear-gradient(120deg, rgba(249,115,22,0.05), rgba(251,191,36,0.02), rgba(249,115,22,0.05));
-  transform: translateX(-100%);
-  animation: keis-shimmer 2s ease-in-out infinite;
-}
-
-/* Keyframes: snake progresses along 4 sides every 25% of the cycle */
-/* legacy 'snake' and 'shimmer' keyframes removed in favor of keis-snake/keis-shimmer */
-
-/* Respect user's motion preferences */
-@media (prefers-reduced-motion: reduce) {
-  .keis-header-cta::before,
-  .keis-header-cta::after,
-  .keis-header-center-cta::before,
-  .keis-header-center-cta::after {
-    animation: none !important;
-  }
-  .keis-header-cta,
-  .keis-header-center-cta {
-    transition: none !important;
-  }
-}
-
-/* Final authoritative overrides to ensure unified CTA visuals across the file.
-   Targets elements which include the helper class .keis-header-cta-base. */
-.keis-header-cta.keis-header-cta-base,
-.keis-header-center-cta.keis-header-cta-base {
-  background: rgba(249,115,22,0.045) !important;
-  color: #fff !important;
-  border-radius: 0 !important;
-  padding: 10px 16px !important;
-  font-weight: 700 !important;
-  white-space: nowrap !important;
-}
-.keis-header-cta.keis-header-cta-base::before,
-.keis-header-center-cta.keis-header-cta-base::before {
-  inset: -3px !important;
-  background-size: 0% 3px, 3px 0%, 0% 3px, 3px 0% !important;
-  animation: keis-snake 2.8s linear infinite !important;
-}
-.keis-header-cta.keis-header-cta-base::after,
-.keis-header-center-cta.keis-header-cta-base::after {
-  animation: keis-shimmer 2s ease-in-out infinite !important;
-  animation-delay: 0.1s !important;
-  opacity: 0.95 !important;
-}
-
-@media (max-width: 899px) {
-  .keis-header-center-cta.keis-header-cta-base { padding: 6px 10px !important; font-size: 11px !important; }
-  .keis-header-cta.keis-header-cta-base::before,
-  .keis-header-center-cta.keis-header-cta-base::before { inset: -2px !important; background-size: 0% 2px, 2px 0%, 0% 2px, 2px 0% !important; }
-}
-
-
-/* Ensure unified visuals take precedence (override earlier duplicates) */
-.keis-header-cta::before,
-.keis-header-center-cta::before {
-  inset: -3px !important;
-  background-size: 0% 3px, 3px 0%, 0% 3px, 3px 0% !important;
-  animation: keis-snake 2.8s linear infinite !important;
-}
-.keis-header-cta::after,
-.keis-header-center-cta::after {
-  animation: keis-shimmer 2s ease-in-out infinite !important;
-  animation-delay: 0.1s !important;
-  opacity: 0.95 !important;
-}
-
-@media (max-width: 899px) {
-  /* smaller border thickness on mobile center CTA */
-  .keis-header-center-cta::before {
-    inset: -2px !important;
-    background-size: 0% 2px, 2px 0%, 0% 2px, 2px 0% !important;
-  }
-}
-
-.keis-header-burger {
-  display: none; /* visible on mobile */
-  background: transparent;
-  border: 0;
-  padding: 6px;
-  width: 44px;
-  height: 44px;
-  align-items: center;
-  justify-content: center;
-  margin-left: 0; /* we'll set auto on mobile to push it right */
-  cursor: pointer;
-}
-
-/* Removed CSS-drawn hamburger lines (.keis-header-burger-icon) to avoid ghost lines.
-   Use image-based icon instead. */
-.keis-header-burger-img {
-  display: block;
-  width: 24px;
-  height: auto;
-  max-height: 28px;
-}
-
-/* Central mobile block (phone + compact CTA) - hidden by default, shown on mobile */
-.keis-header-center {
-  display: none; /* enabled on mobile */
-}
-
-.keis-header-phone {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-.keis-header-phone-line {
-  display: block;
-  font-weight: 600;
-  font-size: 13px;
-  line-height: 1.2;
-  color: #fff;
-}
-
-/* Desktop phone element (hidden by default, shown on >=900px) */
-.keis-header-phone-desktop {
-  display: none;
-}
-
-.keis-header-center-cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 12px;
-  border-radius: 0;
-  font-size: 12px;
-  font-weight: 600;
-  text-decoration: none;
-  margin-top: 6px;
-  background: rgba(249,115,22,0.04);
-  color: #fff;
-}
-
-/* Mobile layout: show burger, hide CTA, smaller logo */
-@media (max-width: 899px) {
-  .keis-header { height: var(--keis-header-height-mobile); }
-  .keis-header-inner { padding: 0 12px; gap: 8px; }
-  .keis-header-cta { display: none !important; }
-  .keis-header-burger { display: flex !important; margin-left: 0 !important; }
-  .keis-header-logo img { height: 36px; max-height: 40px; }
-
-  /* central block visible on mobile and occupies available space — single-line layout */
-  .keis-header-center {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 10px; /* space between phone and button */
-    flex: 1 1 auto;
-    min-width: 0; /* allow children to shrink */
-    margin: 0 8px;
-  }
-  .keis-header-center-cta {
-    display: inline-flex;
-    padding: 6px 10px;
-    font-size: 11px;
-    border-radius: 0; /* keep sharp corners like desktop */
-    white-space: nowrap;
-  }
-  .keis-header-phone-line {
-    white-space: nowrap;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
-    display: block;
-    color: #fff;
-    max-width: 60%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  /* hide desktop elements on mobile */
-  .keis-header-cta,
-  .keis-header-phone-desktop { display: none !important; }
-  /* ensure burger visible on mobile and at right (order in markup places it after center) */
-  .keis-header-burger { display: flex !important; }
-
-  /* Extra small screens: tighten spacing */
-  @media (max-width: 359px) {
-    .keis-header-center { gap: 6px; }
-    .keis-header-phone-line { font-size: 11px; max-width: 55%; }
-    .keis-header-center-cta { padding: 5px 8px; font-size: 10px; }
-  }
-}
-
-/* Desktop: show CTA, hide burger */
-@media (min-width: 900px) {
-  .keis-header-burger { display: none !important; }
-  .keis-header-cta { display: inline-flex !important; margin-left: auto; }
-  .keis-header-center { display: none !important; }
-  .keis-header-phone-desktop { display: inline-flex; align-items: center; margin-left: 16px; font-weight: 600; font-size: 14px; color: #fff; white-space: nowrap; }
-
-  /* Hover / focus: boost brightness and make shimmer stronger */
-  .keis-header-cta:hover,
-  .keis-header-cta:focus-visible {
-    transform: translateY(-1px);
-  }
-  .keis-header-cta:hover::before,
-  .keis-header-cta:focus-visible::before {
-    filter: brightness(1.12);
-  }
-  .keis-header-cta:hover::after,
-  .keis-header-cta:focus-visible::after {
-    opacity: 1.1;
-    transform: translateX(10%);
-  }
-}
-
-/* Scrolled state: darker background and subtle shadow */
-.keis-header.scrolled {
-  background: rgba(0,0,0,0.98);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.55);
-}
-
-/* Removed old #mobileMenu legacy block: behavior is handled by .keis-mobile-menu
-   inside the @media (max-width: 899px) section earlier in the file. */
-
-
-/* ==================================================
-   KEIS HEADER / CTA — unified implementation
-   - Removes legacy external/offset animations
-   - Implements a border-contained "snake" that runs
-     strictly along the button's own border (inside bounds)
-   - Implements a subtle internal shimmer (light sweep)
-   - Single set of keyframes used for both desktop & mobile
-================================================== */
-
-/* Base: apply to both desktop and mobile header CTAs */
-.keis-header-cta,
-.keis-header-center-cta,
-.keis-header-cta-base {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: rgba(249,115,22,0.04); /* subtle warm interior */
-  color: #fff;
-  font-weight: 700;
-  border-radius: 0; /* sharp corners as requested */
-  text-decoration: none;
-  white-space: nowrap;
-  overflow: visible;
-  z-index: 3; /* above the pseudo-elements */
-  box-sizing: border-box;
-}
-
-/* Border-contained snake: ::before lives exactly inside the element box
-   (inset:0), draws 4 thin gradients aligned to the inside edges and
-   animates their lengths to simulate motion clockwise. */
-.keis-header-cta::before,
-.keis-header-center-cta::before,
-.keis-header-cta-base::before {
-  content: "";
-  position: absolute;
-  inset: 0; /* sits exactly within the border box */
-  pointer-events: none;
-  z-index: 1;
-  /* Four gradients correspond to top / right / bottom / left (clockwise) */
-  background-image:
-    linear-gradient(90deg, #FF8A30, #f97316), /* top (left->right) */
-    linear-gradient(180deg, #FF8A30, #f97316), /* right (top->bottom) */
-    linear-gradient(270deg, #FF8A30, #f97316), /* bottom (right->left) */
-    linear-gradient(0deg, #FF8A30, #f97316);   /* left (bottom->top) */
-  background-repeat: no-repeat;
-  /* initial background-size uses length% for each side and thickness in px */
-  background-size: 0% 2px, 2px 0%, 0% 2px, 2px 0%;
-  background-position: top left, top right, bottom right, bottom left;
-  /* clip to padding box so gradients render inside the button bounds */
-  background-clip: padding-box;
-  /* animate with a single keyframe sequence (2s per full cycle) */
-  animation: keis-snake 2s linear infinite;
-}
-
-/* Inner shimmer: strictly inside button (inset by 1px) */
-.keis-header-cta::after,
-.keis-header-center-cta::after,
-.keis-header-cta-base::after {
-  content: "";
-  position: absolute;
-  inset: 1px; /* keep shimmer inside the border */
-  border-radius: 0;
-  z-index: 2;
-  pointer-events: none;
-  background: linear-gradient(90deg, rgba(255,138,48,0.04), rgba(255,138,48,0.08), rgba(255,138,48,0.04));
-  transform: translateX(-110%);
-  mix-blend-mode: screen;
-  opacity: 0.85;
-  animation: keis-shimmer 2s ease-in-out infinite;
-}
-
-/* Hover/focus: make the border fully visible and pause movement for clarity */
-.keis-header-cta:hover::before,
-.keis-header-center-cta:hover::before,
-.keis-header-cta:focus-visible::before,
-.keis-header-center-cta:focus-visible::before {
-  animation-play-state: paused;
-  background-size: 100% 2px, 2px 100%, 100% 2px, 2px 100%;
-}
-.keis-header-cta:hover::after,
-.keis-header-center-cta:hover::after,
-.keis-header-cta:focus-visible::after,
-.keis-header-center-cta:focus-visible::after {
-  animation-play-state: paused;
-  transform: translateX(10%);
-  opacity: 1;
-}
-
-/* Keyframes: keis-snake animates the four background-size values
-   to light up top -> right -> bottom -> left in sequence. */
-@keyframes keis-snake {
-  0%   { background-size: 0% 2px, 2px 0%, 0% 2px, 2px 0%; }
-  12.5%{ background-size: 50% 2px, 2px 0%, 0% 2px, 2px 0%; }
-  25%  { background-size: 100% 2px, 2px 0%, 0% 2px, 2px 0%; }
-
-  37.5%{ background-size: 100% 2px, 2px 25%, 0% 2px, 2px 0%; }
-  50%  { background-size: 100% 2px, 2px 100%, 0% 2px, 2px 0%; }
-
-  62.5%{ background-size: 100% 2px, 2px 100%, 50% 2px, 2px 0%; }
-  75%  { background-size: 100% 2px, 2px 100%, 100% 2px, 2px 0%; }
-
-  87.5%{ background-size: 100% 2px, 2px 100%, 100% 2px, 2px 50%; }
- 100%  { background-size: 100% 2px, 2px 100%, 100% 2px, 2px 100%; }
-}
-
-/* Internal shimmer sweep */
-@keyframes keis-shimmer {
-  0%   { transform: translateX(-110%); opacity: 0.6; }
-  50%  { transform: translateX(10%); opacity: 1; }
- 100%  { transform: translateX(110%); opacity: 0.6; }
-}
-
-/* Respect reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .keis-header-cta::before,
-  .keis-header-cta::after,
-  .keis-header-center-cta::before,
-  .keis-header-center-cta::after,
-  .keis-header-cta-base::before,
-  .keis-header-cta-base::after {
-    animation: none !important;
-    transform: none !important;
-  }
-}
-
-/* Mobile tweaks: same visuals, slightly thinner border and smaller padding */
-@media (max-width: 899px) {
-  .keis-header-center-cta,
-  .keis-header-center-cta.keis-header-cta-base,
-  .keis-header-cta-base {
-    padding: 6px 10px;
-    font-size: 11px;
-  }
-  .keis-header-cta::before,
-  .keis-header-center-cta::before,
-  .keis-header-cta-base::before {
-    background-size: 0% 2px, 2px 0%, 0% 2px, 2px 0% !important;
-  }
-  .keis-header-cta::after,
-  .keis-header-center-cta::after,
-  .keis-header-cta-base::after { inset: 1px; }
-}
-
-/* Desktop visibility rules (keep existing layout behavior) */
-@media (min-width: 900px) {
-  .keis-header-center { display: none !important; }
-  .keis-header-cta { display: inline-flex !important; margin-left: auto; }
-  .keis-header-phone-desktop { display: inline-flex; }
-}
+/* Legacy header selectors removed. .keis-header is the single source of truth. */
 
 
 .hero-title::before {
@@ -3475,197 +2391,7 @@ body { padding-top: 0 !important; }
   display: none;
 }
 
-/* Header layout (organized, breakpoint-first) -------------------------------------------------- */
-/* =========================================
-   HEADER RESPONSIVE LAYOUT (investment)
-   - Desktop ≥900px: полная шапка (логотип + навигация + контакты)
-   - Tablet/Mobile <900px: три столбца (логотип / телефон+CTA / бургер)
-   ========================================= */
-
-/* Desktop ≥900px: full header with nav, contacts row, no burger */
-@media (min-width: 900px) {
-  /* навигация по центру видна на широких экранах */
-  .header-nav {
-    display: flex;
-    gap: 2.25rem;
-    align-items: center;
-  }
-
-  /* блок контактов справа в виде горизонтальной линии:
-     иконка телефона, номер, соцсети, большая кнопка записи */
-  .header-contact {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.65rem;
-    margin-left: 0.75rem;
-  }
-
-  .header-contact-icon,
-  .header-contact-social {
-    display: inline-flex;
-  }
-
-  .header-contact-phone {
-    font-size: 1.02rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-
-  /* основная CTA‑кнопка в шапке — прямоугольная, чуть компактнее по высоте */
-  /* legacy .header-cta visual rules removed — now controlled by .keis-header-cta */
-
-/* Ensure hero content starts below fixed header */
-@media (min-width: 900px) {
-  /* .investment-hero { padding-top: 88px; } */
-}
-@media (max-width: 899px) {
-  /* .investment-hero { padding-top: 72px; } */
-}
-@media (max-width: 360px) {
-  /* .investment-hero { padding-top: 64px; } */
-}
-
-/* Desktop/mobile CTA visibility is now handled by .keis-header and .keis-header-center rules. Legacy selectors removed. */
-
-/* Burger sizing for <=899px and small screens */
-@media (max-width: 899px) {
-  .investment-header #burgerBtn.header-burger { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; margin-left: auto; flex-shrink: 0; }
-  .investment-header #burgerBtn.header-burger .burger-icon { width: 24px; height: 24px; }
-}
-@media (max-width: 360px) {
-  .investment-header #burgerBtn.header-burger { width: 28px; height: 28px; }
-  .investment-header #burgerBtn.header-burger .burger-icon { width: 22px; height: 22px; }
-}
-
-  /* бургер на широких экранах скрываем */
-  .header-burger {
-    display: none;
-  }
-}
-
-/* Tablet & mobile <900px: three columns – logo / phone+CTA / burger */
-@media (max-width: 899px) {
-  .investment-header {
-    padding: 0.4rem 0;
-  }
-
-  .header-container {
-    max-width: 100%;
-    padding: 0.45rem 0.85rem;
-    gap: 0.6rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  /* левый столбец — только логотип */
-  .header-left {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-  }
-
-  .site-logo,
-  .header-logo-img {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    width: 132px;
-    height: auto;
-  }
-
-  /* навигацию прячем, работаем только через бургер */
-  .header-nav {
-    display: none;
-  }
-
-  /* центральный столбец — номер телефона + кнопка записи, вертикальная колонка */
-  .header-contact {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
-    margin-left: 0;
-  }
-
-  .header-contact-phone {
-    width: 100%;
-    text-align: center;
-    font-size: 0.82rem;
-    line-height: 1.2;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    margin: 0;
-    padding: 0;
-    white-space: nowrap;
-    color: var(--orange-light);
-  }
-
-  /* все дополнительные иконки в центре убираем —
-     остаётся только номер + кнопка */
-  .header-contact-icon,
-  .header-contact-icon--phone-small,
-  .header-contact-social,
-  .header-contact-social--tg-small,
-  .header-contact-social--wa-small,
-  .header-contact-label,
-  .header-contact-label--small {
-    display: none !important;
-  }
-
-  /* legacy .header-cta block removed — visual & sizing now managed by .keis-header-cta */
-
-  /* правый столбец — бургер */
-  .header-burger {
-    display: flex;
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: center;
-    margin-left: 0.4rem;
-    margin-right: 0;
-    width: 32px;
-    height: 32px;
-    background: transparent;
-    border: 0;
-    padding: 0;
-  }
-
-  .header-burger .burger-icon {
-    width: 24px;
-    height: 24px;
-  }
-}
-
-/* Extra-small phones <=360px: slightly smaller logo, button & burger */
-@media (max-width: 360px) {
-  .site-logo,
-  .header-logo-img {
-    width: 118px;
-  }
-
-  .header-contact-phone {
-    font-size: 0.78rem;
-    letter-spacing: 0.04em;
-  }
-
-  /* legacy .header-cta mobile sizing removed */
-
-  .header-burger {
-    width: 28px;
-    height: 28px;
-  }
-
-  .header-burger .burger-icon {
-    width: 22px;
-    height: 22px;
-  }
-}
+/* Header layout is handled exclusively by .keis-header and .keis-* selectors. */
 
 /* MOBILE: very small phones (<=375px) */
 @media (max-width: 375px) {
@@ -5231,7 +3957,7 @@ body { padding-top: 0 !important; }
   /* убираем спец-настройки, так как диагональная градиентная полоса удалена */
 }
 
-/* Диагональная градиентная полоса на заголовке удалена по запросу; сохраняем фон 
+/* Диагональная градиентная полоса на заголовке удалена по запросу; сохраняем фон
   из .investment-scenarios::before с изображением scenarios-strip.jpeg */
 
 .investment-scenarios .section-title {
@@ -9265,7 +7991,7 @@ body { padding-top: 0 !important; }
 }
 
 @media (min-width: 900px) {
-  .keis-header { height: var(--keis-header-height-desktop); }
+  .keis-header { height: var(--keis-header-height-desktop); padding-left: 0 !important;}
   .keis-header-logo img { max-height: 56px; }
   .keis-header-burger { display: none; }
   .keis-header-cta { display: inline-flex; }
@@ -10873,4 +9599,41 @@ body.page-investment .investment-hero .btn {
   .keis-header .header-logo-img {
     margin-left: 0 !important;
   }
+}
+
+/* ================================
+   INVESTMENT HEADER — FINAL FIX
+   Desktop only (>=900px)
+   ================================ */
+@media (min-width: 900px) {
+  /* убираем возможный дефолтный отступ страницы */
+  body.page-investment { margin: 0 !important; }
+
+  body.page-investment .keis-header {
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+    left: 0 !important;
+  }
+
+  body.page-investment .keis-header .keis-header-inner {
+    width: 100vw !important;
+    max-width: none !important;
+    margin: 0 !important;
+
+    padding-left: 0 !important;
+    padding-right: 16px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 14px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* порядок: логотип слева, меню у правого блока, контакты/cta справа */
+  body.page-investment .keis-header .keis-header-logo { order: 1 !important; margin: 0 !important; padding: 0 !important; }
+  body.page-investment .keis-header .keis-header-nav  { order: 2 !important; margin-left: auto !important; }
+  body.page-investment .keis-header .keis-header-center { order: 3 !important; margin-left: 14px !important; }
+
+  body.page-investment .keis-header .keis-header-nav-list { white-space: nowrap !important; }
 }
